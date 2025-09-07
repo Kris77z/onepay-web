@@ -62,32 +62,21 @@ export default function SupportedAssets() {
           {/* Horizontal Scrolling Container */}
           <div className="scroll-container overflow-hidden">
             <div className="flex animate-scroll gap-8 whitespace-nowrap">
-              {/* First set of coins */}
-              {cryptocurrencies.map((crypto, index) => (
-                <div
-                  key={`first-${index}`}
-                  className="group flex-shrink-0 p-2"
-                >
-                  <img 
-                    src={crypto.logo} 
-                    alt={crypto.name}
-                    className="w-16 h-16 rounded-full object-cover group-hover:scale-110 transition-transform"
-                  />
-                </div>
-              ))}
-              {/* Duplicate set for seamless scroll */}
-              {cryptocurrencies.map((crypto, index) => (
-                <div
-                  key={`second-${index}`}
-                  className="group flex-shrink-0 p-2"
-                >
-                  <img 
-                    src={crypto.logo} 
-                    alt={crypto.name}
-                    className="w-16 h-16 rounded-full object-cover group-hover:scale-110 transition-transform"
-                  />
-                </div>
-              ))}
+              {/* Multiple sets for continuous content */}
+              {[...Array(4)].map((_, setIndex) => (
+                cryptocurrencies.map((crypto, index) => (
+                  <div
+                    key={`set-${setIndex}-${index}`}
+                    className="group flex-shrink-0 p-2"
+                  >
+                    <img 
+                      src={crypto.logo} 
+                      alt={crypto.name}
+                      className="w-16 h-16 rounded-full object-cover group-hover:scale-110 transition-transform"
+                    />
+                  </div>
+                ))
+              )).flat()}
             </div>
           </div>
         </div>
@@ -106,44 +95,27 @@ export default function SupportedAssets() {
           {/* Horizontal Scrolling Container */}
           <div className="scroll-container overflow-hidden">
             <div className="flex animate-scroll gap-6 whitespace-nowrap">
-              {/* First set of blockchains */}
-              {blockchains.map((blockchain, index) => (
-                <div
-                  key={`first-${index}`}
-                  className="group flex-shrink-0 p-6 rounded-xl border border-white/10 bg-card/50 backdrop-blur-sm hover:bg-card/80 transition-all duration-300 min-w-[280px]"
-                >
-                  <div className="flex items-center gap-4">
-                    <img 
-                      src={blockchain.logo} 
-                      alt={blockchain.name}
-                      className="w-12 h-12 rounded-full object-cover group-hover:scale-110 transition-transform"
-                    />
-                    <div>
-                      <h3 className="text-lg font-medium">{blockchain.name}</h3>
-                      <p className="text-muted-foreground text-sm">{blockchain.description}</p>
+              {/* Multiple sets for continuous content */}
+              {[...Array(3)].map((_, setIndex) => (
+                blockchains.map((blockchain, index) => (
+                  <div
+                    key={`set-${setIndex}-${index}`}
+                    className="group flex-shrink-0 p-6 rounded-xl border border-white/10 bg-card/50 backdrop-blur-sm hover:bg-card/80 transition-all duration-300 min-w-[280px]"
+                  >
+                    <div className="flex items-center gap-4">
+                      <img 
+                        src={blockchain.logo} 
+                        alt={blockchain.name}
+                        className="w-12 h-12 rounded-full object-cover group-hover:scale-110 transition-transform"
+                      />
+                      <div>
+                        <h3 className="text-lg font-medium">{blockchain.name}</h3>
+                        <p className="text-muted-foreground text-sm">{blockchain.description}</p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-              {/* Duplicate set for seamless scroll */}
-              {blockchains.map((blockchain, index) => (
-                <div
-                  key={`second-${index}`}
-                  className="group flex-shrink-0 p-6 rounded-xl border border-white/10 bg-card/50 backdrop-blur-sm hover:bg-card/80 transition-all duration-300 min-w-[280px]"
-                >
-                  <div className="flex items-center gap-4">
-                    <img 
-                      src={blockchain.logo} 
-                      alt={blockchain.name}
-                      className="w-12 h-12 rounded-full object-cover group-hover:scale-110 transition-transform"
-                    />
-                    <div>
-                      <h3 className="text-lg font-medium">{blockchain.name}</h3>
-                      <p className="text-muted-foreground text-sm">{blockchain.description}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
+                ))
+              )).flat()}
             </div>
           </div>
         </div>

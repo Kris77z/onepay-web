@@ -148,12 +148,12 @@
       transform: translateX(0%);
     }
     100% {
-      transform: translateX(-50%);
+      transform: translateX(-25%);
     }
   }
   
   .animate-scroll {
-    animation: scroll 40s linear infinite;
+    animation: scroll 60s linear infinite;
   }
   
   .scroll-container {
