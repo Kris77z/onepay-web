@@ -60,7 +60,7 @@ export default function SupportedAssets() {
           </div>
           
           {/* Horizontal Scrolling Container */}
-          <div className="relative overflow-hidden">
+          <div className="scroll-container overflow-hidden">
             <div className="flex animate-scroll gap-8 whitespace-nowrap">
               {/* First set of coins */}
               {cryptocurrencies.map((crypto, index) => (
@@ -104,7 +104,7 @@ export default function SupportedAssets() {
           </div>
           
           {/* Horizontal Scrolling Container */}
-          <div className="relative overflow-hidden">
+          <div className="scroll-container overflow-hidden">
             <div className="flex animate-scroll gap-6 whitespace-nowrap">
               {/* First set of blockchains */}
               {blockchains.map((blockchain, index) => (
@@ -116,7 +116,7 @@ export default function SupportedAssets() {
                     <img 
                       src={blockchain.logo} 
                       alt={blockchain.name}
-                      className="w-12 h-12 rounded-xl object-cover group-hover:scale-110 transition-transform"
+                      className="w-12 h-12 rounded-full object-cover group-hover:scale-110 transition-transform"
                     />
                     <div>
                       <h3 className="text-lg font-medium">{blockchain.name}</h3>
@@ -135,7 +135,7 @@ export default function SupportedAssets() {
                     <img 
                       src={blockchain.logo} 
                       alt={blockchain.name}
-                      className="w-12 h-12 rounded-xl object-cover group-hover:scale-110 transition-transform"
+                      className="w-12 h-12 rounded-full object-cover group-hover:scale-110 transition-transform"
                     />
                     <div>
                       <h3 className="text-lg font-medium">{blockchain.name}</h3>

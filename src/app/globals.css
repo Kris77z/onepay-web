@@ -145,7 +145,7 @@
 @layer utilities {
   @keyframes scroll {
     0% {
-      transform: translateX(0);
+      transform: translateX(0%);
     }
     100% {
       transform: translateX(-50%);
@@ -153,6 +153,34 @@
   }
   
   .animate-scroll {
-    animation: scroll 30s linear infinite;
+    animation: scroll 40s linear infinite;
+  }
+  
+  .scroll-container {
+    position: relative;
+  }
+  
+  .scroll-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100px;
+    height: 100%;
+    background: linear-gradient(to right, var(--background), transparent);
+    z-index: 10;
+    pointer-events: none;
+  }
+  
+  .scroll-container::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 100px;
+    height: 100%;
+    background: linear-gradient(to left, var(--background), transparent);
+    z-index: 10;
+    pointer-events: none;
   }
 }
