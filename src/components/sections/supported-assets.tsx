@@ -67,12 +67,12 @@ export default function SupportedAssets() {
                 cryptocurrencies.map((crypto, index) => (
                   <div
                     key={`set-${setIndex}-${index}`}
-                    className="group flex-shrink-0 p-2"
+                    className="flex-shrink-0 p-2"
                   >
                     <img 
                       src={crypto.logo} 
                       alt={crypto.name}
-                      className="w-16 h-16 rounded-full object-cover group-hover:scale-110 transition-transform"
+                      className="w-16 h-16 rounded-full object-cover"
                     />
                   </div>
                 ))
@@ -106,7 +106,7 @@ export default function SupportedAssets() {
                       <img 
                         src={blockchain.logo} 
                         alt={blockchain.name}
-                        className="w-12 h-12 rounded-full object-cover group-hover:scale-110 transition-transform"
+                        className="w-12 h-12 rounded-full object-cover"
                       />
                       <div>
                         <h3 className="text-lg font-medium">{blockchain.name}</h3>
