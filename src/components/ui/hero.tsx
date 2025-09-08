@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 import { MoveRight } from "lucide-react";
 
 interface Beam {
@@ -157,11 +158,15 @@ export const PremiumHero = () => {
           </p>
 
           <div className="flex flex-row gap-3 flex-wrap justify-center">
-            <Button size="sm" className="gap-4">
-              Start Integration <MoveRight className="w-4 h-4" />
+            <Button size="sm" className="gap-4" asChild>
+              <Link href="/auth">
+                Start Integration <MoveRight className="w-4 h-4" />
+              </Link>
             </Button>
-            <Button size="sm" className="gap-4" variant="outline">
-              Contact Us <MoveRight className="w-4 h-4" />
+            <Button size="sm" className="gap-4" variant="outline" asChild>
+              <Link href="/contact">
+                Contact Us <MoveRight className="w-4 h-4" />
+              </Link>
             </Button>
           </div>
         </div>

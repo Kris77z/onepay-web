@@ -8,12 +8,6 @@ export default function Footer() {
         { name: "Payments", href: "#payments" },
       ],
     },
-    {
-      title: "Resources",
-      links: [
-        { name: "FAQ", href: "#faq" },
-      ],
-    },
   ];
 
   const legalLinks = [
@@ -38,7 +32,7 @@ export default function Footer() {
               {/* Social links placeholder */}
             </ul>
           </div>
-          <div className="grid w-full gap-6 md:grid-cols-3 lg:gap-20">
+          <div className="grid w-full gap-6 md:grid-cols-1 lg:gap-20">
             {sections.map((section) => (
               <div key={section.title}>
                 <h3 className="mb-4 font-bold">{section.title}</h3>
@@ -57,8 +51,8 @@ export default function Footer() {
           <p className="order-2 lg:order-1">© 2025 OnePay. All rights reserved.</p>
           <ul className="order-1 flex flex-col gap-2 md:order-2 md:flex-row">
             {legalLinks.map((link) => (
-              <li key={link.name} className="hover:text-primary">
-                <a href={link.href}> {link.name}</a>
+              <li key={link.name} className="text-muted-foreground">
+                <span> {link.name}</span>
               </li>
             ))}
           </ul>
