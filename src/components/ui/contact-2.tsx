@@ -16,10 +16,8 @@ interface Contact2Props {
 export const Contact2 = ({
   title = "Contact Us",
   description = "",
-  phone,
   email,
-  web,
-}: Contact2Props) => {
+}: Omit<Contact2Props, 'phone' | 'web'>) => {
   return (
     <section className="py-32">
       <div className="container">
