@@ -1,5 +1,6 @@
 import { Contact2 } from "@/components/ui/contact-2";
 import Navbar from "@/components/sections/navbar";
+import Footer from "@/components/sections/footer";
 
 export default function ContactPage() {
   return (
@@ -11,6 +12,7 @@ export default function ContactPage() {
           description="We are available for questions, feedback, or collaboration opportunities. Let us know how we can help!"
         />
       </div>
+      <Footer />
     </div>
   );
 }
