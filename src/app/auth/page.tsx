@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import Navbar from "@/components/sections/navbar";
 import Image from "next/image";
 import Link from "next/link";
@@ -7,15 +8,41 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { postJson } from "@/lib/api";
+import { toast } from "sonner";
 
 export default function AuthPage() {
+  const [loading, setLoading] = React.useState(false);
+
+  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const form = e.currentTarget as HTMLFormElement;
+    const data = new FormData(form);
+    const email = String(data.get('email') || '').trim();
+    const password = String(data.get('password') || '');
+    if(!email || !password){
+      toast.error('Please enter email and password');
+      return;
+    }
+    try{
+      setLoading(true);
+      await postJson('/auth/login', { email, password });
+      const redirect = new URLSearchParams(window.location.search).get('redirect') || '/dashboard';
+      window.location.href = redirect;
+    }catch(err){
+      console.error('Login failed', err);
+      toast.error('Login failed. Please check your credentials.');
+    } finally {
+      setLoading(false);
+    }
+  }
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
       <div className="flex items-center justify-center p-4 pt-24">
         <div className="w-full max-w-md px-4 py-10 lg:px-6">
           <div className="flex items-center space-x-2">
-            <Image src="/images/onepay.png" alt="OnePay" width={120} height={32} />
+            <Image src="/images/onepay-light.png" alt="OnePay" width={32} height={32} />
           </div>
 
           <h3 className="mt-6 text-lg font-semibold text-foreground">Sign in to your account</h3>
@@ -41,7 +68,7 @@ export default function AuthPage() {
             </div>
           </div>
 
-          <form action="#" method="post" className="mt-6 space-y-4">
+          <form action="#" method="post" className="mt-6 space-y-4" onSubmit={onSubmit}>
             <div>
               <Label htmlFor="email" className="text-sm font-medium text-foreground">Email</Label>
               <Input type="email" id="email" name="email" autoComplete="email" placeholder="you@example.com" className="mt-2" />
@@ -50,7 +77,7 @@ export default function AuthPage() {
               <Label htmlFor="password" className="text-sm font-medium text-foreground">Password</Label>
               <Input type="password" id="password" name="password" placeholder="********" className="mt-2" />
             </div>
-            <Button type="submit" className="mt-4 w-full py-2 font-medium">Sign in</Button>
+            <Button type="submit" className="mt-4 w-full py-2 font-medium" disabled={loading}>{loading ? 'Signing in...' : 'Sign in'}</Button>
           </form>
 
           <p className="mt-6 text-sm text-muted-foreground">

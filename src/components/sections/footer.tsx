@@ -22,7 +22,7 @@ export default function Footer() {
           <div className="flex w-full flex-col justify-between gap-6 lg:items-start">
             <div className="flex items-center lg:justify-start">
               <a href="#">
-                <img src="/images/onepay.png" alt="logo" title="OnePay" className="h-12" />
+                <img src="/images/onepay-light.png" alt="logo" title="OnePay" className="h-12" />
               </a>
             </div>
             <p className="max-w-[70%] text-muted-foreground text-sm">

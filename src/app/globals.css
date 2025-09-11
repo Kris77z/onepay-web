@@ -151,15 +151,15 @@
       transform: translateX(-25%);
     }
   }
-  
+
   .animate-scroll {
     animation: scroll 60s linear infinite;
   }
-  
+
   .scroll-container {
     position: relative;
   }
-  
+
   .scroll-container::before {
     content: '';
     position: absolute;
@@ -171,7 +171,7 @@
     z-index: 10;
     pointer-events: none;
   }
-  
+
   .scroll-container::after {
     content: '';
     position: absolute;

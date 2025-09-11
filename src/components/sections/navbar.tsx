@@ -19,7 +19,7 @@ export default function Navbar() {
       <div className="container mx-auto px-4">
         <nav className="flex h-12 md:h-16 items-center justify-between">
           <Link href="/" className="flex items-center">
-            <Image src="/images/onepay.png" alt="OnePay" width={120} height={32} />
+            <Image src="/images/onepay-light.png" alt="OnePay" width={32} height={32} />
           </Link>
           <div className="hidden md:flex items-center gap-4">
             <a

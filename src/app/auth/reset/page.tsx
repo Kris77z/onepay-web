@@ -13,7 +13,7 @@ export default function ResetPasswordPage() {
       <Navbar />
       <div className="flex items-center justify-center p-4 pt-24">
         <div className="w-full max-w-md px-4 py-10 lg:px-6">
-          <Image src="/images/onepay.png" alt="OnePay" width={120} height={32} />
+          <Image src="/images/onepay-light.png" alt="OnePay" width={32} height={32} />
           <h3 className="mt-6 text-lg font-semibold text-foreground">Reset your password</h3>
 
           <form action="#" method="post" className="mt-6 space-y-4">

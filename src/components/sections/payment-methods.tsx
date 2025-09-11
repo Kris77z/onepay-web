@@ -57,16 +57,16 @@ export default function PaymentMethods() {
             <CardHeader className="pb-4">
               <div className="flex items-start mb-6">
                 <Image 
-                  src="/images/onepay.png" 
+                  src="/images/onepay-light.png" 
                   alt="OnePay" 
-                  width={100} 
-                  height={100} 
+                  width={32} 
+                  height={32} 
                   className="rounded"
                 />
               </div>
 
               <div className="mb-6">
-                <div className="text-3xl font-bold mb-2 text-left">10.00 USDT</div>
+                <div className="text-3xl font-bold mb-2 text-left">20.00 USDT</div>
                 <div className="text-sm text-muted-foreground text-left">{selectedBlockchain} ({blockchains.find(b => b.name === selectedBlockchain)?.standard || "BEP-20"})</div>
               </div>
 
@@ -126,10 +126,10 @@ export default function PaymentMethods() {
             <CardHeader className="pb-4">
               <div className="flex items-start mb-6">
                 <Image 
-                  src="/images/onepay.png" 
+                  src="/images/onepay-light.png" 
                   alt="OnePay" 
-                  width={100} 
-                  height={100} 
+                  width={32} 
+                  height={32} 
                   className="rounded"
                 />
               </div>
@@ -147,7 +147,7 @@ export default function PaymentMethods() {
               </div>
 
               <div className="mb-6">
-                <div className="text-3xl font-bold mb-2 text-left">6 USDT</div>
+                <div className="text-3xl font-bold mb-2 text-left">20.00 USDT</div>
                 <div className="text-sm text-muted-foreground text-left">Name • Crypto2</div>
               </div>
             </CardHeader>
@@ -165,30 +165,34 @@ export default function PaymentMethods() {
           <Card className="w-full max-w-md border-white/10 bg-card/80 backdrop-blur-sm">
             <CardContent className="p-6">
               <div className="text-center">
-                <div className="w-48 h-48 bg-white rounded-lg mx-auto mb-4 flex items-center justify-center">
-                  <div className="w-40 h-40 bg-black rounded-lg relative">
-                    <div className="absolute inset-2 bg-white"></div>
-                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-12 h-12 rounded overflow-hidden">
-                      <Image 
-                        src="/images/onepay.png" 
-                        alt="OnePay" 
-                        width={48} 
-                        height={48} 
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    {/* QR Code pattern simulation */}
-                    {Array.from({length: 8}).map((_, i) => (
-                      <div key={i} className={`absolute w-2 h-2 bg-black`} style={{
-                        top: `${Math.random() * 80}%`,
-                        left: `${Math.random() * 80}%`
-                      }}></div>
-                    ))}
-                  </div>
+                {/* QR Code */}
+                <div className="w-48 h-48 bg-white rounded-lg mx-auto mb-4 overflow-hidden flex items-center justify-center">
+                  <Image 
+                    src="/images/qrcode.png"
+                    alt="Payment QR"
+                    width={192}
+                    height={192}
+                    className="w-48 h-48 object-contain"
+                  />
                 </div>
+                {/* Chain & Tokens */}
+                <div className="text-xs text-muted-foreground mb-2">BNB Chain (BEP-20)</div>
+                <div className="flex items-center justify-center gap-2 mb-3">
+                  <span className="inline-flex items-center gap-1 px-2 py-1 rounded bg-muted/20 border border-white/10">
+                    <Image src="/images/usdt.png" alt="USDT" width={16} height={16} />
+                    <span className="text-xs font-medium">USDT</span>
+                  </span>
+                  <span className="inline-flex items-center gap-1 px-2 py-1 rounded bg-muted/20 border border-white/10">
+                    <Image src="/images/usdc.png" alt="USDC" width={16} height={16} />
+                    <span className="text-xs font-medium">USDC</span>
+                  </span>
+                </div>
+                {/* Amount */}
+                <div className="text-2xl font-semibold mb-2">20.00</div>
+                {/* Address */}
                 <div className="text-sm text-muted-foreground mb-1">Recipient wallet address</div>
                 <div className="text-xs font-mono bg-muted/20 p-2 rounded break-all">
-                  0xb3eec98166b930ca8d5f5d2f2bc3egc44
+                  0xF47557989018c45E6914d2080493F6C9Bbd42cEF
                 </div>
               </div>
             </CardContent>
