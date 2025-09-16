@@ -16,6 +16,11 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "OnePay - Next-Gen Crypto Payments Platform",
   description: "Seamlessly accept cryptocurrency payments with advanced Web3 infrastructure.",
+  icons: {
+    icon: "/images/onepay-dark.png",
+    shortcut: "/images/onepay-dark.png",
+    apple: "/images/onepay-dark.png",
+  },
 };
 
 export default function RootLayout({
