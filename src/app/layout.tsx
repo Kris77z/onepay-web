@@ -1,7 +1,9 @@
-import type { Metadata } from "next";
+"use client";
+
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { Toaster } from "@/components/ui/sonner";
+import Toaster, { ToasterRef } from "@/components/ui/toast";
+import { useRef, useEffect } from "react";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -13,28 +15,44 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "OnePay - Next-Gen Crypto Payments Platform",
-  description: "Seamlessly accept cryptocurrency payments with advanced Web3 infrastructure.",
-  icons: {
-    icon: "/images/onepay-dark.png",
-    shortcut: "/images/onepay-dark.png",
-    apple: "/images/onepay-dark.png",
-  },
-};
-
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const toasterRef = useRef<ToasterRef>(null);
+
+  useEffect(() => {
+    const handleShowToast = (event: CustomEvent) => {
+      const { title, message, variant } = event.detail;
+      toasterRef.current?.show({
+        title,
+        message,
+        variant,
+        duration: 4000,
+      });
+    };
+
+    window.addEventListener('show-toast', handleShowToast as EventListener);
+    return () => {
+      window.removeEventListener('show-toast', handleShowToast as EventListener);
+    };
+  }, []);
+
   return (
     <html lang="en" className="dark">
+      <head>
+        <title>OnePay - Next-Gen Crypto Payments Platform</title>
+        <meta name="description" content="Seamlessly accept cryptocurrency payments with advanced Web3 infrastructure." />
+        <link rel="icon" href="/images/onepay-dark.png" />
+        <link rel="shortcut icon" href="/images/onepay-dark.png" />
+        <link rel="apple-touch-icon" href="/images/onepay-dark.png" />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         {children}
-        <Toaster richColors closeButton position="top-center" />
+        <Toaster ref={toasterRef} defaultPosition="top-right" />
       </body>
     </html>
   );

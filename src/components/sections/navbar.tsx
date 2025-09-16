@@ -3,11 +3,11 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import ComingSoonToast from "@/components/ui/coming-soon-toast";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
-  const [showComingSoon, setShowComingSoon] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     const onScroll = () => setIsScrolled(window.scrollY > 50);
@@ -17,7 +17,7 @@ export default function Navbar() {
 
   const handleComingSoon = (e: React.MouseEvent) => {
     e.preventDefault();
-    setShowComingSoon(true);
+    toast.info("Coming Soon!", "The product is about to be launched, please look forward to it！");
   };
 
 
@@ -78,10 +78,6 @@ export default function Navbar() {
         </div>
       </header>
       
-      <ComingSoonToast 
-        isOpen={showComingSoon} 
-        onClose={() => setShowComingSoon(false)} 
-      />
     </>
   );
 }

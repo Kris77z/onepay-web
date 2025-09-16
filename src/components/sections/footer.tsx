@@ -1,15 +1,14 @@
 "use client";
 
-import { useState } from "react";
 import Image from "next/image";
-import ComingSoonToast from "@/components/ui/coming-soon-toast";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Footer() {
-  const [showComingSoon, setShowComingSoon] = useState(false);
-
+  const { toast } = useToast();
+  
   const handleComingSoon = (e: React.MouseEvent) => {
     e.preventDefault();
-    setShowComingSoon(true);
+    toast.info("Coming Soon!", "The product is about to be launched, please look forward to it！");
   };
 
   const sections = [
@@ -85,11 +84,6 @@ export default function Footer() {
           </ul>
         </div>
       </div>
-      
-      <ComingSoonToast 
-        isOpen={showComingSoon} 
-        onClose={() => setShowComingSoon(false)} 
-      />
     </section>
   );
 }

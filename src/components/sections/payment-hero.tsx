@@ -1,16 +1,15 @@
 "use client";
 
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, CheckCircle } from "lucide-react";
-import ComingSoonToast from "@/components/ui/coming-soon-toast";
+import { useToast } from "@/hooks/use-toast";
 
 export default function PaymentHero() {
-  const [showComingSoon, setShowComingSoon] = useState(false);
-
+  const { toast } = useToast();
+  
   const handleComingSoon = (e: React.MouseEvent) => {
     e.preventDefault();
-    setShowComingSoon(true);
+    toast.info("Coming Soon!", "The product is about to be launched, please look forward to it！");
   };
 
   return (
@@ -66,11 +65,6 @@ export default function PaymentHero() {
       </div>
       
     </section>
-    
-    <ComingSoonToast 
-      isOpen={showComingSoon} 
-      onClose={() => setShowComingSoon(false)} 
-    />
     </>
   );
 }

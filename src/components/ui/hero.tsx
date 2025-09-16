@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
 import { MoveRight } from "lucide-react";
-import ComingSoonToast from "@/components/ui/coming-soon-toast";
+import { useToast } from "@/hooks/use-toast";
 
 interface Beam {
   x: number;
@@ -43,13 +42,13 @@ export const PremiumHero = () => {
   const noiseRef = useRef<HTMLCanvasElement>(null);
   const beamsRef = useRef<Beam[]>([]);
   const animationFrameRef = useRef<number>(0);
-  const [showComingSoon, setShowComingSoon] = useState(false);
+  const { toast } = useToast();
   const LAYERS = 3;
   const BEAMS_PER_LAYER = 8;
 
   const handleComingSoon = (e: React.MouseEvent) => {
     e.preventDefault();
-    setShowComingSoon(true);
+    toast.info("Coming Soon!", "The product is about to be launched, please look forward to it！");
   };
 
   useEffect(() => {
@@ -178,11 +177,6 @@ export const PremiumHero = () => {
           </div>
         </div>
       </div>
-      
-      <ComingSoonToast 
-        isOpen={showComingSoon} 
-        onClose={() => setShowComingSoon(false)} 
-      />
     </>
   );
 };

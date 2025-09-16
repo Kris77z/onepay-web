@@ -3,10 +3,11 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
-import { toast } from "sonner";
+import { useToast } from "@/hooks/use-toast";
 
 export default function ContactSection() {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -30,7 +31,7 @@ export default function ContactSection() {
 
   const handleSubmit = async () => {
     if (!isFormValid()) {
-      toast.error("Please fill in all fields");
+      toast.error("Error", "Please fill in all fields");
       return;
     }
 
@@ -39,9 +40,7 @@ export default function ContactSection() {
     await new Promise(resolve => setTimeout(resolve, 1000));
     setIsSubmitting(false);
     
-    toast.success("Message sent successfully!", {
-      description: "Thank you for your interest. We'll get back to you within 24 hours."
-    });
+    toast.success("Message sent successfully!", "Thank you for your interest. We'll get back to you within 24 hours.");
     
     // 重置表单
     setFormData({

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { toast } from "sonner";
+import { useToast } from "@/hooks/use-toast";
 
 interface Contact2Props {
   title?: string;
@@ -21,6 +21,7 @@ export const Contact2 = ({
   email,
 }: Omit<Contact2Props, 'phone' | 'web'>) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -46,7 +47,7 @@ export const Contact2 = ({
 
   const handleSubmit = async () => {
     if (!isFormValid()) {
-      toast.error("Please fill in all fields");
+      toast.error("Error", "Please fill in all fields");
       return;
     }
 
@@ -55,9 +56,7 @@ export const Contact2 = ({
     await new Promise(resolve => setTimeout(resolve, 1000));
     setIsSubmitting(false);
     
-    toast.success("Message sent successfully!", {
-      description: "Thank you for contacting us. We'll respond to you within 24 hours."
-    });
+    toast.success("Message sent successfully!", "Thank you for contacting us. We'll respond to you within 24 hours.");
     
     // 重置表单
     setFormData({
