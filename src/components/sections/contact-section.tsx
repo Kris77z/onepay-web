@@ -3,18 +3,53 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
-import SuccessToast from "@/components/ui/success-toast";
+import { toast } from "sonner";
 
 export default function ContactSection() {
-  const [showSuccess, setShowSuccess] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    company: "",
+    message: ""
+  });
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const isFormValid = () => {
+    return formData.name.trim() && 
+           formData.email.trim() && 
+           formData.company.trim() && 
+           formData.message.trim();
+  };
 
   const handleSubmit = async () => {
+    if (!isFormValid()) {
+      toast.error("Please fill in all fields");
+      return;
+    }
+
     setIsSubmitting(true);
     // 模拟提交延迟
     await new Promise(resolve => setTimeout(resolve, 1000));
     setIsSubmitting(false);
-    setShowSuccess(true);
+    
+    toast.success("Message sent successfully!", {
+      description: "Thank you for your interest. We'll get back to you within 24 hours."
+    });
+    
+    // 重置表单
+    setFormData({
+      name: "",
+      email: "",
+      company: "",
+      message: ""
+    });
   };
   return (
     <section className="py-16 bg-gradient-to-br from-primary/5 via-background to-primary/5">
@@ -55,29 +90,41 @@ export default function ContactSection() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <input
                     type="text"
-                    placeholder="Your Name"
+                    placeholder="Your Name *"
+                    value={formData.name}
+                    onChange={(e) => handleInputChange("name", e.target.value)}
                     className="px-4 py-3 rounded-lg border border-white/20 bg-background/50 backdrop-blur-sm focus:border-primary focus:outline-none"
+                    required
                   />
                   <input
                     type="email"
-                    placeholder="Email Address"
+                    placeholder="Email Address *"
+                    value={formData.email}
+                    onChange={(e) => handleInputChange("email", e.target.value)}
                     className="px-4 py-3 rounded-lg border border-white/20 bg-background/50 backdrop-blur-sm focus:border-primary focus:outline-none"
+                    required
                   />
                 </div>
                 <input
                   type="text"
-                  placeholder="Company Name"
+                  placeholder="Company Name *"
+                  value={formData.company}
+                  onChange={(e) => handleInputChange("company", e.target.value)}
                   className="w-full px-4 py-3 rounded-lg border border-white/20 bg-background/50 backdrop-blur-sm focus:border-primary focus:outline-none"
+                  required
                 />
                 <textarea
-                  placeholder="Please describe your requirements..."
+                  placeholder="Please describe your requirements... *"
                   rows={4}
+                  value={formData.message}
+                  onChange={(e) => handleInputChange("message", e.target.value)}
                   className="w-full px-4 py-3 rounded-lg border border-white/20 bg-background/50 backdrop-blur-sm focus:border-primary focus:outline-none resize-none"
+                  required
                 />
                 <Button 
                   className="w-full" 
                   onClick={handleSubmit}
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || !isFormValid()}
                 >
                   {isSubmitting ? "Sending..." : "Contact OnePay team"}
                   <ArrowRight className="ml-2 w-4 h-4" />
@@ -87,13 +134,6 @@ export default function ContactSection() {
           </div>
         </div>
       </div>
-      
-      <SuccessToast 
-        isOpen={showSuccess}
-        onClose={() => setShowSuccess(false)}
-        title="Message sent successfully!"
-        message="Thank you for your interest. We'll get back to you within 24 hours."
-      />
     </section>
   );
 }

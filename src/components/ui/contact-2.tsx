@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import SuccessToast from "@/components/ui/success-toast";
+import { toast } from "sonner";
 
 interface Contact2Props {
   title?: string;
@@ -20,15 +20,53 @@ export const Contact2 = ({
   description = "",
   email,
 }: Omit<Contact2Props, 'phone' | 'web'>) => {
-  const [showSuccess, setShowSuccess] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    subject: "",
+    message: ""
+  });
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const isFormValid = () => {
+    return formData.firstName.trim() && 
+           formData.lastName.trim() && 
+           formData.email.trim() && 
+           formData.subject.trim() && 
+           formData.message.trim();
+  };
 
   const handleSubmit = async () => {
+    if (!isFormValid()) {
+      toast.error("Please fill in all fields");
+      return;
+    }
+
     setIsSubmitting(true);
     // 模拟提交延迟
     await new Promise(resolve => setTimeout(resolve, 1000));
     setIsSubmitting(false);
-    setShowSuccess(true);
+    
+    toast.success("Message sent successfully!", {
+      description: "Thank you for contacting us. We'll respond to you within 24 hours."
+    });
+    
+    // 重置表单
+    setFormData({
+      firstName: "",
+      lastName: "",
+      email: "",
+      subject: "",
+      message: ""
+    });
   };
 
   return (
@@ -58,43 +96,70 @@ export const Contact2 = ({
           <div className="mx-auto flex max-w-screen-md flex-col gap-6 rounded-lg border p-10">
             <div className="flex gap-4">
               <div className="grid w-full items-center gap-1.5">
-                <Label htmlFor="firstname">First Name</Label>
-                <Input type="text" id="firstname" placeholder="First Name" />
+                <Label htmlFor="firstname">First Name *</Label>
+                <Input 
+                  type="text" 
+                  id="firstname" 
+                  placeholder="First Name" 
+                  value={formData.firstName}
+                  onChange={(e) => handleInputChange("firstName", e.target.value)}
+                  required
+                />
               </div>
               <div className="grid w-full items-center gap-1.5">
-                <Label htmlFor="lastname">Last Name</Label>
-                <Input type="text" id="lastname" placeholder="Last Name" />
+                <Label htmlFor="lastname">Last Name *</Label>
+                <Input 
+                  type="text" 
+                  id="lastname" 
+                  placeholder="Last Name" 
+                  value={formData.lastName}
+                  onChange={(e) => handleInputChange("lastName", e.target.value)}
+                  required
+                />
               </div>
             </div>
             <div className="grid w-full items-center gap-1.5">
-              <Label htmlFor="email">Email</Label>
-              <Input type="email" id="email" placeholder="Email" />
+              <Label htmlFor="email">Email *</Label>
+              <Input 
+                type="email" 
+                id="email" 
+                placeholder="Email" 
+                value={formData.email}
+                onChange={(e) => handleInputChange("email", e.target.value)}
+                required
+              />
             </div>
             <div className="grid w-full items-center gap-1.5">
-              <Label htmlFor="subject">Subject</Label>
-              <Input type="text" id="subject" placeholder="Subject" />
+              <Label htmlFor="subject">Subject *</Label>
+              <Input 
+                type="text" 
+                id="subject" 
+                placeholder="Subject" 
+                value={formData.subject}
+                onChange={(e) => handleInputChange("subject", e.target.value)}
+                required
+              />
             </div>
             <div className="grid w-full gap-1.5">
-              <Label htmlFor="message">Message</Label>
-              <Textarea placeholder="Type your message here." id="message" />
+              <Label htmlFor="message">Message *</Label>
+              <Textarea 
+                placeholder="Type your message here." 
+                id="message" 
+                value={formData.message}
+                onChange={(e) => handleInputChange("message", e.target.value)}
+                required
+              />
             </div>
             <Button 
               className="w-full" 
               onClick={handleSubmit}
-              disabled={isSubmitting}
+              disabled={isSubmitting || !isFormValid()}
             >
               {isSubmitting ? "Sending..." : "Send Message"}
             </Button>
           </div>
         </div>
       </div>
-      
-      <SuccessToast 
-        isOpen={showSuccess}
-        onClose={() => setShowSuccess(false)}
-        title="Message sent successfully!"
-        message="Thank you for contacting us. We'll respond to you within 24 hours."
-      />
     </section>
   );
 };
