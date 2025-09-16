@@ -1,9 +1,21 @@
 "use client";
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
+import SuccessToast from "@/components/ui/success-toast";
 
 export default function ContactSection() {
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+    // 模拟提交延迟
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    setIsSubmitting(false);
+    setShowSuccess(true);
+  };
   return (
     <section className="py-16 bg-gradient-to-br from-primary/5 via-background to-primary/5">
       <div className="container mx-auto px-4">
@@ -62,8 +74,12 @@ export default function ContactSection() {
                   rows={4}
                   className="w-full px-4 py-3 rounded-lg border border-white/20 bg-background/50 backdrop-blur-sm focus:border-primary focus:outline-none resize-none"
                 />
-                <Button className="w-full">
-                  Contact OnePay team
+                <Button 
+                  className="w-full" 
+                  onClick={handleSubmit}
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Sending..." : "Contact OnePay team"}
                   <ArrowRight className="ml-2 w-4 h-4" />
                 </Button>
               </div>
@@ -71,6 +87,13 @@ export default function ContactSection() {
           </div>
         </div>
       </div>
+      
+      <SuccessToast 
+        isOpen={showSuccess}
+        onClose={() => setShowSuccess(false)}
+        title="Message sent successfully!"
+        message="Thank you for your interest. We'll get back to you within 24 hours."
+      />
     </section>
   );
 }

@@ -1,9 +1,11 @@
-import React from "react";
+"use client";
 
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import SuccessToast from "@/components/ui/success-toast";
 
 interface Contact2Props {
   title?: string;
@@ -18,6 +20,17 @@ export const Contact2 = ({
   description = "",
   email,
 }: Omit<Contact2Props, 'phone' | 'web'>) => {
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+    // 模拟提交延迟
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    setIsSubmitting(false);
+    setShowSuccess(true);
+  };
+
   return (
     <section className="py-32">
       <div className="container">
@@ -65,10 +78,23 @@ export const Contact2 = ({
               <Label htmlFor="message">Message</Label>
               <Textarea placeholder="Type your message here." id="message" />
             </div>
-            <Button className="w-full">Send Message</Button>
+            <Button 
+              className="w-full" 
+              onClick={handleSubmit}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Sending..." : "Send Message"}
+            </Button>
           </div>
         </div>
       </div>
+      
+      <SuccessToast 
+        isOpen={showSuccess}
+        onClose={() => setShowSuccess(false)}
+        title="Message sent successfully!"
+        message="Thank you for contacting us. We'll respond to you within 24 hours."
+      />
     </section>
   );
 };
