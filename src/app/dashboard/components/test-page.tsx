@@ -14,6 +14,7 @@ import { Connection, PublicKey, SystemProgram, Transaction } from '@solana/web3.
 import { getAssociatedTokenAddress, getAccount, createAssociatedTokenAccountInstruction, createTransferInstruction } from '@solana/spl-token'
 import { connectWithOnboard } from '@/lib/onboard'
 import QRCode from 'qrcode'
+import { getJson } from '@/lib/api'
 
 interface EthereumProvider {
   request: <T = unknown>(args: { method: string; params?: unknown[] }) => Promise<T>
@@ -30,7 +31,8 @@ interface SolanaProvider {
   isSolflare?: boolean
   publicKey?: { toString(): string }
   connect: () => Promise<{ publicKey: { toString(): string } }>
-  signAndSendTransaction: (tx: Transaction) => Promise<{ signature: string }>
+  signAndSendTransaction?: (tx: Transaction) => Promise<{ signature: string }>
+  signTransaction?: (tx: Transaction) => Promise<Transaction>
 }
 
 const getSolanaProvider = (): SolanaProvider | null => {
@@ -47,6 +49,7 @@ declare global {
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3002'
 const RECEIVER = '0x46d2d17d0e835a7f3a2269c9ad0d80d859996d63'
+// 默认收款地址（可根据你的实际地址调整），并在 UI 中显示
 const SOLANA_RECEIVER = '8RphPY9oWHqJ6TDDWycqQ5mBcXAf5QmuUzVuifX7u8To'
 const SOLANA_RPC = process.env.NEXT_PUBLIC_SOLANA_RPC || 'https://api.mainnet-beta.solana.com'
 
@@ -215,6 +218,7 @@ export default function TestPage() {
   const [connectMode, setConnectMode] = React.useState<'auto'|'injected'|'walletconnect'|'offline'>('auto')
   const [solSignature, setSolSignature] = React.useState<string>('')
   const [resolvedTokenAddress, setResolvedTokenAddress] = React.useState<string>('')
+  const [rpcStatus, setRpcStatus] = React.useState<Record<string, { status: 'checking'|'ok'|'warning'|'error', message: string, latency?: number }>>({})
 
   const updateMetrics = (updates: Partial<TestMetrics>) => {
     setMetrics(prev => ({ ...prev, ...updates }))
@@ -231,12 +235,81 @@ export default function TestPage() {
     setDebugLogs(prev => [...prev.slice(-19), `[${timestamp}] ${icon} ${message}`])
   }
 
-  const getTokenAddress = async () => {
-    // Solana 直接返回 mint，避免被 EVM 注入的 chainId 干扰
-    if (selectedChain === 'solana') {
+  const checkRpcHealth = async (chain: string, isEvm: boolean = true) => {
+    const start = Date.now()
+    setRpcStatus(prev => ({ ...prev, [chain]: { status: 'checking', message: '检测中...' } }))
+    
+    try {
+      if (isEvm) {
+        // EVM 链：测试 eth_chainId + eth_blockNumber
+        const res = await fetch(`${API_BASE}/api/evm/code?chain=${chain}&address=0x0000000000000000000000000000000000000000`)
+        if (res.ok) {
+          const latency = Date.now() - start
+          setRpcStatus(prev => ({ ...prev, [chain]: { status: 'ok', message: `${latency}ms`, latency } }))
+        } else {
+          const text = await res.text()
+          setRpcStatus(prev => ({ ...prev, [chain]: { status: 'error', message: `${res.status}: ${text}` } }))
+        }
+      } else {
+        // Solana：测试 getHealth + getSlot
+        const healthRes = await fetch(`${API_BASE}/api/solana/rpc`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'getHealth' })
+        })
+        if (healthRes.ok) {
+          const health = await healthRes.json()
+          if (health.result === 'ok') {
+            // 再测试 getSlot 获取延迟
+            const slotRes = await fetch(`${API_BASE}/api/solana/rpc`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'getSlot' })
+            })
+            const latency = Date.now() - start
+            if (slotRes.ok) {
+              const slot = await slotRes.json()
+              setRpcStatus(prev => ({ ...prev, [chain]: { status: 'ok', message: `${latency}ms (slot: ${slot.result})`, latency } }))
+            } else {
+              setRpcStatus(prev => ({ ...prev, [chain]: { status: 'warning', message: `健康但无法获取 slot (${latency}ms)` } }))
+            }
+          } else {
+            setRpcStatus(prev => ({ ...prev, [chain]: { status: 'warning', message: health.result || 'unknown' } }))
+          }
+        } else {
+          const text = await healthRes.text()
+          setRpcStatus(prev => ({ ...prev, [chain]: { status: 'error', message: `${healthRes.status}: ${text}` } }))
+        }
+      }
+    } catch (e) {
+      const message = e instanceof Error ? e.message : String(e)
+      setRpcStatus(prev => ({ ...prev, [chain]: { status: 'error', message } }))
+    }
+  }
+
+  const checkAllRpcs = async () => {
+    const chains = [
+      { name: 'ethereum', isEvm: true },
+      { name: 'bsc', isEvm: true },
+      { name: 'arbitrum', isEvm: true },
+      { name: 'bsc-testnet', isEvm: true },
+      { name: 'solana', isEvm: false }
+    ]
+    
+    for (const { name, isEvm } of chains) {
+      await checkRpcHealth(name, isEvm)
+      // 避免并发过多，稍微延迟
+      await new Promise(resolve => setTimeout(resolve, 200))
+    }
+  }
+
+  const getTokenAddress = async (overrideChain?: 'ethereum'|'bsc'|'arbitrum'|'bsc-testnet'|'solana') => {
+    // 对于 Solana，始终返回 mint，避免被 EVM 注入的 chainId 干扰
+    const chainKey = overrideChain || selectedChain
+    if (chainKey === 'solana') {
       return getTokenAddressForChain('solana', selectedToken, customContract)
     }
-    // EVM：尽量以钱包当前链为准
+    // EVM：优先使用钱包当前网络
     try {
       const injected = window.okxwallet || window.ethereum
       if (injected) {
@@ -248,7 +321,7 @@ export default function TestPage() {
         }
       }
     } catch {}
-    return getTokenAddressForChain(selectedChain, selectedToken, customContract)
+    return getTokenAddressForChain(chainKey, selectedToken, customContract)
   }
 
   const normalizeAddress = (addr: string): string => {
@@ -390,13 +463,14 @@ export default function TestPage() {
     }
   }
 
-  const checkTokenBalance = async (walletAddress?: string) => {
+  const checkTokenBalance = async (walletAddress?: string, chainOverride?: 'ethereum'|'bsc'|'arbitrum'|'bsc-testnet'|'solana') => {
     try {
+      const effectiveChain = chainOverride || selectedChain
       let address = walletAddress || account
       if (!address) return
 
       addLog('检查代币余额...', 'info')
-      if(selectedChain === 'solana'){
+      if(effectiveChain === 'solana'){
         // 优先取注入钱包的 Solana 公钥（兼容 OKX/Phantom/Solflare）
         const sp = getSolanaProvider()
         const injectedPk = sp?.publicKey?.toString?.()
@@ -407,7 +481,7 @@ export default function TestPage() {
           addLog('未检测到 Solana 注入，且地址为 EVM 0x，余额查询将失败','warning')
           throw new Error('SOLANA_WALLET_NOT_CONNECTED')
         }
-        const conn = new Connection(SOLANA_RPC, 'confirmed')
+        const conn = new Connection(`${process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3002'}/api/solana/rpc`, 'confirmed')
         const owner = new PublicKey(address)
         const mint = new PublicKey(SOLANA_MINTS[selectedToken])
         const ata = await getAssociatedTokenAddress(mint, owner)
@@ -446,21 +520,132 @@ export default function TestPage() {
         }
         return
       }
-      const provider = await getProvider()
-      const tokenAddress = normalizeAddress(await getTokenAddress())
-      const erc20 = new ethers.Contract(tokenAddress, ERC20_ABI, provider)
-      const decimals = await erc20.decimals()
-      const balance = await erc20.balanceOf(address)
-      const balanceFormatted = ethers.formatUnits(balance, decimals)
+      // EVM 读链：先做合约代码预检，避免 BAD_DATA 500
+      const resolvedTokenAddr = await getTokenAddress(effectiveChain)
+      const codeRes = await fetch(`${API_BASE}/api/evm/code?chain=${encodeURIComponent(effectiveChain)}&address=${encodeURIComponent(resolvedTokenAddr)}`)
+      if(codeRes.ok){
+        const code = await codeRes.json() as { hasCode: boolean }
+        if(!code.hasCode){
+          toast.error(`${effectiveChain} 未配置 ${selectedToken} 合约，请填写自定义地址或改选 USDT`)
+          addLog(`预检失败：该地址无合约代码 chain=${effectiveChain} address=${resolvedTokenAddr||'<empty>'}`, 'error')
+          setTokenBalance('查询失败')
+          return
+        }
+      }
+
+      const rpcRes = await fetch(`${API_BASE}/api/evm/balance`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chain: effectiveChain,
+          token: resolvedTokenAddr,
+          owner: address
+        })
+      })
+      if(!rpcRes.ok){
+        const txt = await rpcRes.text();
+        throw new Error(`EVM RPC ${rpcRes.status}: ${txt}`)
+      }
+      const { decimals, balance } = await rpcRes.json() as { decimals: number, balance: string }
+      const balanceFormatted = ethers.formatUnits(BigInt(balance), decimals)
       setTokenBalance(balanceFormatted)
       setDecimalsState(Number(decimals))
       updateMetrics({ balanceChecked: true })
       addLog(`当前 ${selectedToken} 余额: ${balanceFormatted}`, 'success')
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : String(e)
+      if(/Payment Required|Out of CU|402/.test(message)){
+        addLog('RPC 配额已用尽：请更换后端 RPC 或稍后再试', 'warning')
+        toast.warning('RPC 配额不足，请稍后或更换 RPC')
+      }
       addLog(`余额查询失败: ${message}`, 'error')
       setTokenBalance('查询失败')
     }
+  }
+
+  // 执行 Solana SPL 代币转账并等待确认，返回交易签名
+  const sendSolanaSplTransfer = async (amountStr: string): Promise<string> => {
+    if (selectedChain !== 'solana') throw new Error('当前非 Solana 链')
+    const sp = getSolanaProvider()
+    if (!sp) throw new Error('未检测到 Solana 钱包')
+
+    // 确保已连接并获取公钥
+    const pk = sp.publicKey?.toString?.() || (await sp.connect()).publicKey.toString()
+    if (!pk) throw new Error('无法获取钱包公钥')
+    setAccount(pk)
+    addLog(`Solana 钱包: ${pk.slice(0,6)}...${pk.slice(-4)}`,'info')
+
+    // 构造连接与账户
+    const conn = new Connection(`${API_BASE}/api/solana/rpc`, 'confirmed')
+    const owner = new PublicKey(pk)
+    const mint = new PublicKey(SOLANA_MINTS[selectedToken])
+    const destOwner = new PublicKey(SOLANA_RECEIVER)
+
+    // 源/目标 ATA
+    const fromAta = await getAssociatedTokenAddress(mint, owner)
+    const toAta = await getAssociatedTokenAddress(mint, destOwner)
+
+    // 读取最新区块信息
+    const { blockhash, lastValidBlockHeight } = await conn.getLatestBlockhash('confirmed')
+
+    const tx = new Transaction()
+    tx.feePayer = owner
+    tx.recentBlockhash = blockhash
+
+    // 确保目标 ATA 存在，不存在则由付款人创建
+    try {
+      await getAccount(conn, toAta)
+    } catch {
+      tx.add(
+        createAssociatedTokenAccountInstruction(
+          owner, // payer
+          toAta, // ata to create
+          destOwner, // owner of ata
+          mint
+        )
+      )
+      addLog('已加入创建接收方 ATA 指令', 'info')
+    }
+
+    // 计算最小单位金额（USDT/USDC on Solana 默认 6 位小数）
+    const decimals = 6
+    const units = BigInt(Math.round(Number(amountStr) * Math.pow(10, decimals)))
+
+    // 加入 transfer 指令
+    tx.add(createTransferInstruction(fromAta, toAta, owner, units))
+    addLog('已构造 SPL 代币转账指令', 'info')
+
+    // 调起钱包签名并发送
+    let signature: string
+    if (sp.signAndSendTransaction) {
+      const res = await sp.signAndSendTransaction(tx)
+      signature = res.signature
+    } else if (sp.signTransaction) {
+      const signed = await sp.signTransaction(tx)
+      const raw = signed.serialize()
+      signature = await conn.sendRawTransaction(raw)
+    } else {
+      throw new Error('当前钱包不支持 signAndSendTransaction/signTransaction')
+    }
+
+    addLog(`交易已发送: ${signature}`, 'success')
+    toast.message('交易已发送', { description: signature })
+
+    // 等待确认（使用 getSignatureStatuses 轮询，避免 block height 误判过期）
+    addLog('等待交易确认...', 'info')
+    let confirmed = false
+    for (let i = 0; i < 20; i++) {
+      const st = await conn.getSignatureStatuses([signature], { searchTransactionHistory: true })
+      const s = st.value?.[0]
+      if (s && (s.confirmationStatus === 'confirmed' || s.confirmationStatus === 'finalized')) {
+        confirmed = true
+        break
+      }
+      await new Promise(r => setTimeout(r, 3000))
+    }
+    if (!confirmed) throw new Error('CONFIRM_TIMEOUT')
+    addLog('交易确认成功', 'success')
+    return signature
   }
 
   const resolveDecimals = (): number => {
@@ -590,8 +775,12 @@ export default function TestPage() {
         updateMetrics({ networkSwitched: true })
         toast.success(`已切换到 ${chainConfig.displayName}`)
         addLog(`✅ 成功切换到 ${chainConfig.displayName} (chainId=${currentChainId})`, 'success')
-        // 切链后自动刷新余额（若已连接）
-        if (account) { await checkTokenBalance(account) }
+        // 切链后同步 EVM 账户并刷新余额
+        try {
+          const accounts = await injected.request<string[]>({ method: 'eth_requestAccounts' })
+          const evmAddr = accounts?.[0]
+          if(evmAddr){ setAccount(evmAddr); await checkTokenBalance(evmAddr, chainKey as any) }
+        } catch {}
       } else {
         addLog(`切换后校验失败: 当前 chainId=${currentChainId}, 期望=${chainConfig.chainId}`, 'error')
         toast.error('切换失败或被拒绝')
@@ -665,14 +854,109 @@ export default function TestPage() {
       addLog(`测试金额: ${value} ${selectedToken}`, 'info')
       addLog(`订单ID: ${newOrderId}`, 'info')
 
-      // Step 1: 确认当前网络（尊重用户已选择的链，不强制切换）
+      // Step 1: 确认当前网络（Solana 与 EVM 分支）
       updateMetrics({ currentStep: 1 })
+      if(selectedChain === 'solana'){
+        addLog('当前网络: solana', 'success')
+        addLog(`接收方: ${SOLANA_RECEIVER}`, 'info')
+        addLog(`代币合约: ${SOLANA_MINTS[selectedToken]}`, 'info')
+        updateMetrics({ networkSwitched: true, currentStep: 2 })
+
+        // 余额预检
+        await checkTokenBalance(account)
+
+        // Step 3: attempts（Solana）
+        const conn = new Connection(`${API_BASE}/api/solana/rpc`, 'confirmed')
+        const slot = await conn.getSlot('confirmed')
+        const deadline = Math.floor(Date.now() / 1000) + 60 * 10
+        const senderPk = account
+        const attemptPayloadSol = {
+          blockchain: 'solana',
+          sender: senderPk,
+          receiver: SOLANA_RECEIVER,
+          to_token: SOLANA_MINTS[selectedToken],
+          to_amount: value.toString(),
+          to_decimals: 6,
+          after_block: String(slot),
+          deadline: String(deadline)
+        }
+        try {
+          addLog('调用后端 /api/payments/attempts (solana)...','info')
+          const r = await fetch(`${API_BASE}/api/payments/attempts?orderId=${encodeURIComponent(newOrderId)}`,{
+            method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(attemptPayloadSol)
+          })
+          const txt = await r.text()
+          if(!r.ok){ addLog(`attempts(solana) 失败: ${r.status} ${txt}`,'warning') }
+          else { addLog('attempts(solana) 成功','success'); updateMetrics({ attemptsCalled: true }) }
+        } catch (e) {
+          addLog(`attempts(solana) 异常: ${e instanceof Error ? e.message : String(e)}`,'warning')
+        }
+
+        // Step 4: 构造并发送 SPL 转账（唤醒钱包签名）
+        addLog('执行链上 SPL 代币转账...','info')
+        const signature = await sendSolanaSplTransfer(value.toString())
+        setLastTx(signature)
+        updateMetrics({ transferExecuted: true, currentStep: 5 })
+
+        // Step 5: 轮询后端 status（若后端暂未支持将返回 UNSUPPORTED_CHAIN）
+        addLog('开始轮询后端支付状态 (solana)...','info')
+        let pollCount = 0
+        const maxPolls = 12
+        while(pollCount < maxPolls){
+          pollCount++
+          addLog(`轮询第 ${pollCount} 次 (最多 ${maxPolls} 次)...`, 'info')
+          await new Promise(r=>setTimeout(r,5000))
+          const statusPayload = {
+            blockchain: 'solana',
+            transaction: signature,
+            sender: senderPk,
+            receiver: SOLANA_RECEIVER,
+            to_token: SOLANA_MINTS[selectedToken],
+            after_block: String(slot),
+            deadline: String(deadline)
+          }
+          const res = await fetch(`${API_BASE}/api/payments/status?orderId=${encodeURIComponent(newOrderId)}`, {
+            method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(statusPayload)
+          })
+          const txt = await res.text()
+          addLog(`📥 status 原始响应: ${txt || '<empty>'}`)
+          if(!res.ok) continue
+          let data: any
+          try { data = txt ? JSON.parse(txt) : {} } catch {}
+          if(data?.status === 'success'){
+            addLog('后端确认支付成功！', 'success')
+            updateMetrics({ statusPolled: true, currentStep: 6 })
+            try {
+              addLog('调用 notify 通知入账...', 'info')
+              const notifyRes = await fetch(`${API_BASE}/api/orders/${newOrderId}/payments/notify`,{
+                method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ txHash: signature, chain: 'solana' })
+              })
+              if(notifyRes.ok){ addLog('notify 成功','success'); updateMetrics({ notifyCalled: true, currentStep: 7 }) }
+            } catch {}
+            updateMetrics({ testCompleted: true, currentStep: 8 })
+            const duration = ((Date.now() - testStartTime) / 1000).toFixed(1)
+            addLog(`完整闭环测试成功！耗时 ${duration}s`, 'success')
+            toast.success('测试成功！支付已完成并通知后端入账')
+            setLastStatus('success')
+            return
+          } else if(data?.status === 'failed'){
+            const reason = data?.failed_reason || 'UNKNOWN'
+            addLog(`后端确认支付失败: ${reason}`,'error')
+            toast.error(`测试失败: ${reason}`)
+            setLastStatus(`failed(${reason})`)
+            return
+          }
+        }
+        addLog('轮询超时，后端未在预期时间内确认交易', 'warning')
+        toast.error('测试超时: 后端未在预期时间内确认交易')
+        setLastStatus('timeout')
+        return
+      }
       const injected = window.okxwallet || window.ethereum
-      if(!injected){ throw new Error('未检测到钱包') }
       const provider = await getProvider()
       const network = await provider.getNetwork()
       addLog(`当前网络: ${network.name} (chainId: ${network.chainId})`, 'success')
-      const currentChainKey = (findChainKeyById(Number(network.chainId)) || selectedChain) as 'ethereum'|'bsc'|'bsc-testnet'
+      const currentChainKey = (findChainKeyById(Number(network.chainId)) || selectedChain) as 'ethereum'|'bsc'|'arbitrum'|'bsc-testnet'
       setSelectedChain(currentChainKey)
       updateMetrics({ networkSwitched: true, currentStep: 2 })
 
@@ -879,11 +1163,19 @@ export default function TestPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight">支付闭环测试</h2>
-        <p className="text-muted-foreground">
-          测试 BSC Testnet 上的完整支付流程：attempts → transfer → status → notify
-        </p>
+      <div className="grid gap-4 md:grid-cols-2">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight">支付闭环测试</h2>
+          <p className="text-muted-foreground">测试：attempts → transfer → status → notify</p>
+        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-medium">Dev Metrics (range=30d)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <DevMetrics />
+          </CardContent>
+        </Card>
       </div>
 
       {/* 进度跟踪面板 */}
@@ -988,6 +1280,74 @@ export default function TestPage() {
         </CardContent>
       </Card>
 
+      {/* RPC 状态检测面板 */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle>RPC 状态检测</CardTitle>
+            <Button variant="outline" size="sm" onClick={checkAllRpcs}>
+              检测所有 RPC
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            {[
+              { name: 'ethereum', displayName: 'Ethereum', isEvm: true },
+              { name: 'bsc', displayName: 'BSC', isEvm: true },
+              { name: 'arbitrum', displayName: 'Arbitrum', isEvm: true },
+              { name: 'bsc-testnet', displayName: 'BSC Testnet', isEvm: true },
+              { name: 'solana', displayName: 'Solana', isEvm: false }
+            ].map(({ name, displayName, isEvm }) => {
+              const status = rpcStatus[name]
+              const getStatusColor = () => {
+                if (!status) return 'bg-gray-300'
+                switch (status.status) {
+                  case 'ok': return 'bg-green-500'
+                  case 'warning': return 'bg-yellow-500'
+                  case 'error': return 'bg-red-500'
+                  case 'checking': return 'bg-blue-500 animate-pulse'
+                  default: return 'bg-gray-300'
+                }
+              }
+              
+              return (
+                <div key={name} className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <div className={`w-3 h-3 rounded-full ${getStatusColor()}`} />
+                    <span className="text-sm font-medium">{displayName}</span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 px-2 text-xs"
+                      onClick={() => checkRpcHealth(name, isEvm)}
+                    >
+                      测试
+                    </Button>
+                  </div>
+                  {status && (
+                    <div className="text-xs text-muted-foreground">
+                      {status.message}
+                      {status.latency && status.latency > 1000 && (
+                        <span className="text-yellow-600 ml-1">(慢)</span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+          <div className="mt-4 text-xs text-muted-foreground">
+            <div className="space-y-1">
+              <div>• 绿色：RPC 正常响应</div>
+              <div>• 黄色：部分功能异常或响应较慢（&gt;1s）</div>
+              <div>• 红色：RPC 无法连接或返回错误</div>
+              <div>• 蓝色（闪烁）：检测中</div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle>测试控制台</CardTitle>
@@ -1029,9 +1389,9 @@ export default function TestPage() {
 
           <Separator />
 
-          {/* 代币选择 */}
-          <div className="space-y-2">
-            <div className="text-sm font-medium">代币</div>
+          {/* Token Selection */}
+          <div className="space-y-3">
+            <div className="text-sm font-medium">Token</div>
             <div className="flex items-center gap-2">
               <Select value={selectedToken} onValueChange={(value: 'USDT' | 'USDC') => setSelectedToken(value)}>
                 <SelectTrigger className="w-32">
@@ -1054,9 +1414,9 @@ export default function TestPage() {
             </div>
           </div>
 
-          {/* 金额输入 */}
-          <div className="space-y-2">
-            <div className="text-sm font-medium">金额</div>
+          {/* Amount Input */}
+          <div className="space-y-3">
+            <div className="text-sm font-medium">Amount</div>
             <Input
               type="number"
               step="0.01"
@@ -1252,10 +1612,19 @@ export default function TestPage() {
                 variant="outline" 
                 size="sm"
                 onClick={() => {
-                  if (lastTx) {
+                  if (!lastTx) { toast.warning('没有交易记录'); return }
+                  if (selectedChain === 'solana') {
+                    window.open(`https://solscan.io/tx/${lastTx}`, '_blank')
+                  } else if (selectedChain === 'bsc-testnet') {
                     window.open(`https://testnet.bscscan.com/tx/${lastTx}`, '_blank')
+                  } else if (selectedChain === 'bsc') {
+                    window.open(`https://bscscan.com/tx/${lastTx}`, '_blank')
+                  } else if (selectedChain === 'ethereum') {
+                    window.open(`https://etherscan.io/tx/${lastTx}`, '_blank')
+                  } else if (selectedChain === 'arbitrum') {
+                    window.open(`https://arbiscan.io/tx/${lastTx}`, '_blank')
                   } else {
-                    toast.warning('没有交易记录')
+                    window.open(`${lastTx}`, '_blank')
                   }
                 }}
                 disabled={!lastTx}
@@ -1367,6 +1736,42 @@ export default function TestPage() {
           </div>
         </CardContent>
       </Card>
+    </div>
+  )
+}
+
+function DevMetrics(){
+  const [loading, setLoading] = React.useState(false)
+  const [err, setErr] = React.useState<string>('')
+  const [data, setData] = React.useState<{ total_fees: number; payers_count: number; period: { from: string; to: string } } | null>(null)
+  const MERCHANT_ID = process.env.NEXT_PUBLIC_MERCHANT_ID || 'demo-merchant'
+  React.useEffect(()=>{
+    let cancelled = false
+    ;(async()=>{
+      try{
+        setLoading(true)
+        const d = await getJson<{ total_fees:number; payers_count:number; period:{from:string;to:string} }>(`/api/dev/${encodeURIComponent(MERCHANT_ID)}/stats?range=30d`)
+        if(!cancelled) setData(d)
+      }catch(e){ if(!cancelled) setErr(e instanceof Error ? e.message : String(e)) }
+      finally{ if(!cancelled) setLoading(false) }
+    })()
+    return ()=>{ cancelled = true }
+  },[])
+  return (
+    <div className="text-sm">
+      {loading ? 'Loading...' : (
+        <div className="flex gap-6">
+          <div>
+            <div className="text-muted-foreground">Total Fees</div>
+            <div className="font-semibold">${'{'}data ? data.total_fees.toFixed(2) : '0.00'{'}'}</div>
+          </div>
+          <div>
+            <div className="text-muted-foreground">Payers</div>
+            <div className="font-semibold">${'{'}data ? data.payers_count : 0{'}'}</div>
+          </div>
+        </div>
+      )}
+      {err && <div className="text-xs text-red-500">{err}</div>}
     </div>
   )
 }

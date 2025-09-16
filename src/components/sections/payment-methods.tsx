@@ -38,15 +38,15 @@ const paymentMethods = [
 ];
 
 const blockchains = [
-  { name: "BNB Chain", symbol: "BNB", standard: "BEP-20" },
-  { name: "Ethereum", symbol: "ETH", standard: "ERC-20" },
-  { name: "Polygon", symbol: "MATIC", standard: "ERC-20" },
-  { name: "Arbitrum", symbol: "ARB", standard: "ERC-20" }
+  { name: "BNB Smart Chain", symbol: "BNB", standard: "BEP-20", logo: "/images/bsc-chain.png" },
+  { name: "Ethereum", symbol: "ETH", standard: "ERC-20", logo: "/images/eth-chian.png" },
+  { name: "Solana", symbol: "SOL", standard: "SPL", logo: "/images/sol-chain.png" },
+  { name: "Arbitrum", symbol: "ARB", standard: "ERC-20", logo: "/images/arb-chain.png" }
 ];
 
 export default function PaymentMethods() {
   const [activeMethod, setActiveMethod] = useState("invoices");
-  const [selectedBlockchain, setSelectedBlockchain] = useState("BNB Chain");
+  const [selectedBlockchain, setSelectedBlockchain] = useState("BNB Smart Chain");
   const [showBlockchainDropdown, setShowBlockchainDropdown] = useState(false);
 
   const renderMockContent = (type: string) => {
@@ -90,7 +90,16 @@ export default function PaymentMethods() {
                     className="w-full justify-between"
                     onClick={() => setShowBlockchainDropdown(!showBlockchainDropdown)}
                   >
-                    <span>{selectedBlockchain}</span>
+                    <div className="flex items-center gap-2">
+                      <Image 
+                        src={blockchains.find(b => b.name === selectedBlockchain)?.logo || "/images/bsc-chain.png"}
+                        alt={selectedBlockchain}
+                        width={16}
+                        height={16}
+                        className="rounded-full"
+                      />
+                      <span>{selectedBlockchain}</span>
+                    </div>
                     <ChevronDown className={`w-4 h-4 transition-transform ${showBlockchainDropdown ? 'rotate-180' : ''}`} />
                   </Button>
                   
@@ -99,12 +108,19 @@ export default function PaymentMethods() {
                       {blockchains.map((blockchain) => (
                         <button
                           key={blockchain.name}
-                          className="w-full px-3 py-2 text-left hover:bg-accent rounded-lg text-sm"
+                          className="w-full px-3 py-2 text-left hover:bg-accent rounded-lg text-sm flex items-center gap-2"
                           onClick={() => {
                             setSelectedBlockchain(blockchain.name);
                             setShowBlockchainDropdown(false);
                           }}
                         >
+                          <Image 
+                            src={blockchain.logo}
+                            alt={blockchain.name}
+                            width={16}
+                            height={16}
+                            className="rounded-full"
+                          />
                           {blockchain.name}
                         </button>
                       ))}
@@ -176,7 +192,7 @@ export default function PaymentMethods() {
                   />
                 </div>
                 {/* Chain & Tokens */}
-                <div className="text-xs text-muted-foreground mb-2">BNB Chain (BEP-20)</div>
+                <div className="text-xs text-muted-foreground mb-2">BNB Smart Chain (BEP-20)</div>
                 <div className="flex items-center justify-center gap-2 mb-3">
                   <span className="inline-flex items-center gap-1 px-2 py-1 rounded bg-muted/20 border border-white/10">
                     <Image src="/images/usdt.png" alt="USDT" width={16} height={16} />

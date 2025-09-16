@@ -19,6 +19,7 @@ import {
   IconTrash,
   IconRefresh
 } from "@tabler/icons-react";
+import { postJson } from "@/lib/api";
 
 export function SettingsPage() {
   const [showApiKey, setShowApiKey] = useState(false);
@@ -79,119 +80,98 @@ export function SettingsPage() {
     setApiKeys(prev => prev.filter(key => key.id !== id));
   };
 
+  // API Quickstart envs (dev convenience)
+  const API_BASE = (process.env.NEXT_PUBLIC_API_BASE || '').replace(/\/$/, '')
+  const MERCHANT_ID = process.env.NEXT_PUBLIC_MERCHANT_ID || ''
+  const API_KEY = process.env.NEXT_PUBLIC_API_KEY || ''
+  const maskedKey = API_KEY ? `${API_KEY.slice(0,4)}••••••••${API_KEY.slice(-4)}` : ''
+  const base = API_BASE || 'http://localhost:3002'
+  const MERCHANT_PLACEHOLDER = MERCHANT_ID || '<YOUR_MERCHANT_ID>'
+  const APIKEY_PLACEHOLDER = API_KEY || '<YOUR_API_KEY>'
+  const EVM_DEFAULT_RECEIVER = '0x2f28db7b3a6f62f0c425f0196db2dfea29d824a0'
+  const SOL_DEFAULT_RECEIVER = 'DVgDzRZpwM4iNbMihUiTyhy6FVE6SBYeSGiXqtaSpcST'
+  const curlCreateOrder = `curl -X POST ${base}/api/orders \\
+  -H 'Content-Type: application/json' \\
+  -H 'X-API-Key: ${APIKEY_PLACEHOLDER}' \\
+  -d '{"id":"ORDER_001","chain":"bsc-testnet","token_symbol":"USDT","token_address":"0x337610d27c682E347C9cD60BD4b3b107C9d34dDd","decimals":18,"expected_amount":"20.00"}'`
+  const nodeCreateOrder = `const res = await fetch('${base}/api/orders', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-API-Key': '${APIKEY_PLACEHOLDER}' }, body: JSON.stringify({ id: 'ORDER_001', chain: 'bsc-testnet', token_symbol: 'USDT', token_address: '0x337610d27c682E347C9cD60BD4b3b107C9d34dDd', decimals: 18, expected_amount: '20.00' }) });\nconst data = await res.json();\nconsole.log(data);`
+
+  // Payment URL Generator state
+  const [genChain, setGenChain] = useState('bsc-testnet')
+  const [genToken, setGenToken] = useState<'USDT'|'USDC'>('USDT')
+  const [genTokenAddress, setGenTokenAddress] = useState('0x337610d27c682E347C9cD60BD4b3b107C9d34dDd')
+  const [genDecimals, setGenDecimals] = useState(18)
+  const [genAmount, setGenAmount] = useState('20.00')
+  const [genFixed, setGenFixed] = useState(true)
+  const [genResult, setGenResult] = useState<{pay_url?:string;deep_link?:string;qrcode_text?:string;error?:string}|null>(null)
+  const [genLoading, setGenLoading] = useState(false)
+
+  function applyPreset(nextChain: string, nextToken: 'USDT'|'USDC'){
+    // Provide safe presets for demo networks only; otherwise leave manual
+    if(nextChain === 'bsc-testnet' && nextToken === 'USDT'){
+      setGenTokenAddress('0x337610d27c682E347C9cD60BD4b3b107C9d34dDd')
+      setGenDecimals(18)
+    } else {
+      // Unknown preset: keep current or ask user to fill
+      setGenTokenAddress('')
+      setGenDecimals(6)
+    }
+  }
+
+  async function handleGenerate(){
+    try{
+      setGenLoading(true)
+      setGenResult(null)
+      if(!genTokenAddress){
+        setGenResult({ error: 'Please provide token address for selected chain/token.' })
+        return
+      }
+      const body = {
+        id: `DEMO_${Date.now()}`,
+        chain: genChain,
+        token_symbol: genToken,
+        token_address: genTokenAddress,
+        decimals: genDecimals,
+        expected_amount: genAmount,
+      }
+      const resp = await postJson<any>(`/api/orders`, body)
+      setGenResult({ pay_url: resp?.pay_url, deep_link: resp?.deep_link, qrcode_text: resp?.qrcode_text })
+    }catch(e:any){
+      setGenResult({ error: e?.data?.error || e?.message || 'Generate failed' })
+    }finally{
+      setGenLoading(false)
+    }
+  }
+
   return (
     <div className="flex justify-center">
       <div className="space-y-6 max-w-4xl w-full">
 
-      <Tabs defaultValue="security" className="w-full space-y-4">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="security">
-            <IconShield className="mr-2 h-4 w-4" />
-            安全设置
+      <Tabs defaultValue="api" className="w-full space-y-4">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="api">
+            <IconKey className="mr-2 h-4 w-4" />
+            API
           </TabsTrigger>
           <TabsTrigger value="notifications">
             <IconBell className="mr-2 h-4 w-4" />
-            通知设置
-          </TabsTrigger>
-          <TabsTrigger value="api">
-            <IconKey className="mr-2 h-4 w-4" />
-            API 设置
+            General
           </TabsTrigger>
         </TabsList>
 
-        {/* 安全设置 */}
-        <TabsContent value="security" className="space-y-6 mt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>密码与安全</CardTitle>
-              <CardDescription>管理您的账户安全设置</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* 修改密码 */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium">修改密码</h3>
-                <div className="grid gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="current-password">当前密码</Label>
-                    <Input id="current-password" type="password" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="new-password">新密码</Label>
-                    <Input id="new-password" type="password" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="confirm-password">确认新密码</Label>
-                    <Input id="confirm-password" type="password" />
-                  </div>
-                  <Button>更新密码</Button>
-                </div>
-              </div>
 
-              {/* 双重验证 */}
-              <div className="space-y-4 pt-6 border-t">
-                <h3 className="text-lg font-medium">双重验证 (2FA)</h3>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">手机验证器应用</p>
-                    <p className="text-sm text-muted-foreground">
-                      使用 Google Authenticator 或其他验证器应用
-                    </p>
-                  </div>
-                  <Switch />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">短信验证</p>
-                    <p className="text-sm text-muted-foreground">
-                      通过短信接收验证码
-                    </p>
-                  </div>
-                  <Switch />
-                </div>
-              </div>
-
-              {/* 登录活动 */}
-              <div className="space-y-4 pt-6 border-t">
-                <h3 className="text-lg font-medium">最近登录活动</h3>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
-                    <div>
-                      <p className="font-medium">Chrome on macOS</p>
-                      <p className="text-sm text-muted-foreground">北京, 中国 - 2024-01-15 14:30</p>
-                    </div>
-                    <Badge variant="default">当前会话</Badge>
-                  </div>
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
-                    <div>
-                      <p className="font-medium">Safari on iPhone</p>
-                      <p className="text-sm text-muted-foreground">上海, 中国 - 2024-01-14 09:15</p>
-                    </div>
-                    <Button variant="outline" size="sm">撤销</Button>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* 通知设置 */}
+        {/* General Settings */}
         <TabsContent value="notifications" className="space-y-6 mt-4">
           <Card>
-            <CardHeader>
-              <CardTitle>通知偏好</CardTitle>
-              <CardDescription>选择您希望接收的通知类型</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* 通知方式 */}
+            <CardContent className="space-y-6 pt-6">
+              {/* Preferences */}
               <div className="space-y-4">
-                <h3 className="text-lg font-medium">通知方式</h3>
+                <h3 className="text-lg font-medium">Preferences</h3>
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-medium">邮件通知</p>
-                      <p className="text-sm text-muted-foreground">
-                        接收重要的邮件更新
-                      </p>
+                      <p className="font-medium">Email</p>
+                      <p className="text-sm text-muted-foreground">Receive important updates via email</p>
                     </div>
                     <Switch 
                       checked={notifications.email}
@@ -200,41 +180,25 @@ export function SettingsPage() {
                   </div>
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-medium">推送通知</p>
-                      <p className="text-sm text-muted-foreground">
-                        在浏览器中接收推送通知
-                      </p>
+                      <p className="font-medium">Browser push</p>
+                      <p className="text-sm text-muted-foreground">Receive push notifications in your browser</p>
                     </div>
                     <Switch 
                       checked={notifications.push}
                       onCheckedChange={(checked) => handleNotificationChange('push', checked)}
                     />
                   </div>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">短信通知</p>
-                      <p className="text-sm text-muted-foreground">
-                        接收重要的短信提醒
-                      </p>
-                    </div>
-                    <Switch 
-                      checked={notifications.sms}
-                      onCheckedChange={(checked) => handleNotificationChange('sms', checked)}
-                    />
-                  </div>
                 </div>
               </div>
 
-              {/* 通知类型 */}
+              {/* Notification types */}
               <div className="space-y-4 pt-6 border-t">
-                <h3 className="text-lg font-medium">通知类型</h3>
+                <h3 className="text-lg font-medium">Notification types</h3>
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-medium">交易活动</p>
-                      <p className="text-sm text-muted-foreground">
-                        交易完成、失败和状态更新
-                      </p>
+                      <p className="font-medium">Transaction updates</p>
+                      <p className="text-sm text-muted-foreground">Completed, failed, and status updates</p>
                     </div>
                     <Switch 
                       checked={notifications.trading}
@@ -243,10 +207,8 @@ export function SettingsPage() {
                   </div>
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-medium">安全提醒</p>
-                      <p className="text-sm text-muted-foreground">
-                        登录活动和安全相关的通知
-                      </p>
+                      <p className="font-medium">Security alerts</p>
+                      <p className="text-sm text-muted-foreground">Login activity and security notices</p>
                     </div>
                     <Switch 
                       checked={notifications.security}
@@ -255,10 +217,8 @@ export function SettingsPage() {
                   </div>
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-medium">产品更新</p>
-                      <p className="text-sm text-muted-foreground">
-                        新功能和产品公告
-                      </p>
+                      <p className="font-medium">Product updates</p>
+                      <p className="text-sm text-muted-foreground">New features and announcements</p>
                     </div>
                     <Switch 
                       checked={notifications.news}
@@ -268,160 +228,123 @@ export function SettingsPage() {
                 </div>
               </div>
 
-              {/* 联系信息 */}
+              {/* Security */}
               <div className="space-y-4 pt-6 border-t">
-                <h3 className="text-lg font-medium">联系信息</h3>
-                <div className="grid gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="email">邮箱地址</Label>
-                    <Input id="email" type="email" defaultValue="user@onepay.com" />
+                <h3 className="text-lg font-medium">Two-factor authentication</h3>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">Authenticator app</p>
+                    <p className="text-sm text-muted-foreground">Use Google Authenticator or other apps</p>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">手机号码</Label>
-                    <Input id="phone" type="tel" defaultValue="+86 138 0013 8000" />
-                  </div>
-                  <Button>保存更改</Button>
+                  <Switch />
                 </div>
               </div>
             </CardContent>
           </Card>
         </TabsContent>
 
-        {/* API 设置 */}
+        {/* API Settings */}
         <TabsContent value="api" className="space-y-6 mt-4">
           <Card>
-            <CardHeader>
-              <CardTitle>API 密钥管理</CardTitle>
-              <CardDescription>创建和管理您的 API 密钥</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* 创建新密钥 */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-medium">API 密钥</h3>
-                  <Button onClick={generateNewApiKey}>
-                    <IconPlus className="mr-2 h-4 w-4" />
-                    创建新密钥
-                  </Button>
+            <CardContent className="space-y-6 pt-6">
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="space-y-3">
+                  <div className="text-sm font-medium">Base URL</div>
+                  <Input value={API_BASE} readOnly className="font-mono" />
                 </div>
-
-                {/* 密钥列表 */}
-                <div className="space-y-4">
-                  {apiKeys.map((key) => (
-                    <div key={key.id} className="p-4 border rounded-lg space-y-3">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-medium">{key.name}</p>
-                          <p className="text-sm text-muted-foreground">
-                            创建于 {key.created} • 最后使用 {key.lastUsed}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Badge 
-                            variant={key.status === 'active' ? 'default' : 'secondary'}
-                          >
-                            {key.status === 'active' ? '活跃' : '禁用'}
-                          </Badge>
-                          <Button variant="ghost" size="sm" onClick={() => deleteApiKey(key.id)}>
-                            <IconTrash className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-2">
-                        <Input 
-                          type={showApiKey ? "text" : "password"}
-                          value={key.key}
-                          readOnly
-                          className="font-mono text-sm"
-                        />
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => setShowApiKey(!showApiKey)}
-                        >
-                          {showApiKey ? <IconEyeOff className="h-4 w-4" /> : <IconEye className="h-4 w-4" />}
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => copyToClipboard(key.key)}
-                        >
-                          <IconCopy className="h-4 w-4" />
-                        </Button>
-                      </div>
-
-                      <div className="flex gap-2">
-                        {key.permissions.map((permission) => (
-                          <Badge key={permission} variant="outline">
-                            {permission === 'read' ? '读取' : '写入'}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
+                <div className="space-y-3">
+                  <div className="text-sm font-medium">Merchant ID</div>
+                  <Input value={MERCHANT_ID || 'Auto-bound to your account'} readOnly className="font-mono" />
+                </div>
+                <div className="space-y-3 md:col-span-2">
+                  <div className="text-sm font-medium">API Key (server-side only)</div>
+                  <div className="flex gap-2">
+                    <Input value={maskedKey} readOnly className="font-mono" />
+                    <Button variant="outline" size="sm" onClick={()=>copyToClipboard(API_KEY)}><IconCopy className="h-4 w-4" /></Button>
+                  </div>
                 </div>
               </div>
 
-              {/* Webhook 设置 */}
-              <div className="space-y-4 pt-6 border-t">
-                <h3 className="text-lg font-medium">Webhook 设置</h3>
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="webhook-url">Webhook URL</Label>
-                    <Input 
-                      id="webhook-url" 
-                      placeholder="https://your-app.com/webhook"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="webhook-secret">Webhook 密钥</Label>
-                    <div className="flex gap-2">
-                      <Input 
-                        id="webhook-secret" 
-                        type="password"
-                        placeholder="webhook_secret_key"
-                      />
-                      <Button variant="outline">
-                        <IconRefresh className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>事件类型</Label>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="flex items-center space-x-2">
-                        <Switch id="payment-completed" />
-                        <Label htmlFor="payment-completed">支付完成</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Switch id="payment-failed" />
-                        <Label htmlFor="payment-failed">支付失败</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Switch id="refund-issued" />
-                        <Label htmlFor="refund-issued">退款发放</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Switch id="dispute-created" />
-                        <Label htmlFor="dispute-created">争议创建</Label>
-                      </div>
-                    </div>
-                  </div>
-                  <Button>保存 Webhook 设置</Button>
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="space-y-3">
+                  <div className="text-sm font-medium">cURL Example</div>
+                  <pre className="rounded-lg border p-3 text-xs overflow-x-auto">{curlCreateOrder}</pre>
+                </div>
+                <div className="space-y-3">
+                  <div className="text-sm font-medium">Node.js Example</div>
+                  <pre className="rounded-lg border p-3 text-xs overflow-x-auto">{nodeCreateOrder}</pre>
                 </div>
               </div>
 
-              {/* API 文档 */}
-              <div className="space-y-4 pt-6 border-t">
-                <h3 className="text-lg font-medium">API 文档</h3>
-                <p className="text-sm text-muted-foreground">
-                  查看我们的 API 文档以了解如何集成 OnePay 支付服务。
-                </p>
-                <Button variant="outline">
-                  查看 API 文档
-                </Button>
+              {/* Payment URL Generator */}
+              <div className="space-y-3 pt-6 border-t">
+                <h3 className="text-lg font-medium">Payment URL Generator</h3>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="space-y-3">
+                    <div className="text-sm font-medium">Chain</div>
+                    <select className="w-full border rounded-md h-9 px-2" value={genChain} onChange={(e)=>{ const v=e.target.value; setGenChain(v); applyPreset(v, genToken) }}>
+                      <option value="bsc-testnet">bsc-testnet</option>
+                      <option value="bsc">bsc</option>
+                      <option value="arbitrum">arbitrum</option>
+                      <option value="ethereum">ethereum</option>
+                      <option value="solana">solana</option>
+                    </select>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="text-sm font-medium">Token</div>
+                    <select className="w-full border rounded-md h-9 px-2" value={genToken} onChange={(e)=>{ const v=e.target.value as 'USDT'|'USDC'; setGenToken(v); applyPreset(genChain, v) }}>
+                      <option value="USDT">USDT</option>
+                      <option value="USDC">USDC</option>
+                    </select>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="text-sm font-medium">Token Address</div>
+                    <Input value={genTokenAddress} placeholder="0x... or mint" onChange={(e)=>setGenTokenAddress(e.target.value)} className="font-mono" />
+                  </div>
+                  <div className="space-y-3">
+                    <div className="text-sm font-medium">Decimals</div>
+                    <Input type="number" value={genDecimals} onChange={(e)=>setGenDecimals(Number(e.target.value||0))} />
+                  </div>
+                  <div className="space-y-3">
+                    <div className="text-sm font-medium">Amount</div>
+                    <Input value={genAmount} onChange={(e)=>setGenAmount(e.target.value)} />
+                  </div>
+                  <div className="space-y-3">
+                    <div className="text-sm font-medium">Fixed amount</div>
+                    <div className="flex items-center gap-2 h-9">
+                      <Switch checked={genFixed} onCheckedChange={setGenFixed} />
+                      <span className="text-xs text-muted-foreground">Amount is required for payment URLs</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button onClick={handleGenerate} disabled={genLoading}>{genLoading ? 'Generating...' : 'Generate'}</Button>
+                  {genResult?.pay_url && (
+                    <Button variant="outline" onClick={()=>copyToClipboard(genResult.pay_url!)}><IconCopy className="h-4 w-4 mr-2" />Copy pay_url</Button>
+                  )}
+                </div>
+                {genResult?.error && (
+                  <div className="text-xs text-red-500">{genResult.error}</div>
+                )}
+                {(genResult?.pay_url || genResult?.deep_link) && (
+                  <div className="grid md:grid-cols-2 gap-4 text-xs">
+                    <div className="space-y-3">
+                      <div className="text-sm font-medium">pay_url</div>
+                      <pre className="rounded-lg border p-3 overflow-x-auto">{genResult?.pay_url}</pre>
+                    </div>
+                    <div className="space-y-3">
+                      <div className="text-sm font-medium">deep_link</div>
+                      <pre className="rounded-lg border p-3 overflow-x-auto">{genResult?.deep_link}</pre>
+                    </div>
+                  </div>
+                )}
               </div>
+
+              <div className="text-xs text-muted-foreground">
+                <p><span className="font-medium">Recommended:</span> Use <code>pay_url</code> returned by <code>POST /api/orders</code> as your button href or QR text. It auto-resolves to the correct wallet payment link.</p>
+              </div>
+
+              {/* simplified, removed webhook/docs sections */}
             </CardContent>
           </Card>
         </TabsContent>

@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { MoveRight } from "lucide-react";
+import ComingSoonToast from "@/components/ui/coming-soon-toast";
 
 interface Beam {
   x: number;
@@ -42,8 +43,14 @@ export const PremiumHero = () => {
   const noiseRef = useRef<HTMLCanvasElement>(null);
   const beamsRef = useRef<Beam[]>([]);
   const animationFrameRef = useRef<number>(0);
+  const [showComingSoon, setShowComingSoon] = useState(false);
   const LAYERS = 3;
   const BEAMS_PER_LAYER = 8;
+
+  const handleComingSoon = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setShowComingSoon(true);
+  };
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -143,34 +150,39 @@ export const PremiumHero = () => {
 
 
   return (
-    <div className="relative w-full h-screen overflow-hidden">
-      <canvas ref={noiseRef} className="absolute inset-0 z-0 pointer-events-none" />
-      <canvas ref={canvasRef} className="absolute inset-0 z-10" />
+    <>
+      <div className="relative w-full h-screen overflow-hidden">
+        <canvas ref={noiseRef} className="absolute inset-0 z-0 pointer-events-none" />
+        <canvas ref={canvasRef} className="absolute inset-0 z-10" />
 
-      <div className="relative z-20 flex h-screen w-full items-center justify-center px-6 text-center">
-        <div className="container mx-auto flex flex-col items-center gap-12 text-center">
-          <h1 className="text-5xl md:text-7xl max-w-2xl tracking-tighter font-regular text-white">
-            Next-Gen Crypto Platform
-          </h1>
+        <div className="relative z-20 flex h-screen w-full items-center justify-center px-6 text-center">
+          <div className="container mx-auto flex flex-col items-center gap-12 text-center">
+            <h1 className="text-5xl md:text-7xl max-w-2xl tracking-tighter font-regular text-white">
+              Next-Gen Crypto Platform
+            </h1>
 
-          <p className="text-lg md:text-xl leading-relaxed tracking-tight text-muted-foreground max-w-2xl text-center">
-            Accept cryptocurrency payments with advanced Web3 infrastructure. Built for modern businesses.
-          </p>
+            <p className="text-lg md:text-xl leading-relaxed tracking-tight text-muted-foreground max-w-2xl text-center">
+              Accept cryptocurrency payments with advanced Web3 infrastructure. Built for modern businesses.
+            </p>
 
-          <div className="flex flex-row gap-3 flex-wrap justify-center">
-            <Button size="sm" className="gap-4" asChild>
-              <Link href="/auth">
+            <div className="flex flex-row gap-3 flex-wrap justify-center">
+              <Button size="sm" className="gap-4" onClick={handleComingSoon}>
                 Start Integration <MoveRight className="w-4 h-4" />
-              </Link>
-            </Button>
+              </Button>
             <Button size="sm" className="gap-4" variant="outline" asChild>
-              <Link href="/contact">
+              <a href="http://localhost:3001/contact">
                 Contact Us <MoveRight className="w-4 h-4" />
-              </Link>
+              </a>
             </Button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+      
+      <ComingSoonToast 
+        isOpen={showComingSoon} 
+        onClose={() => setShowComingSoon(false)} 
+      />
+    </>
   );
 };

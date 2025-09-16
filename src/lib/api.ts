@@ -1,4 +1,5 @@
 export const API_BASE = (process.env.NEXT_PUBLIC_API_BASE || '').replace(/\/$/, '')
+const API_KEY = process.env.NEXT_PUBLIC_API_KEY || ''
 
 type Json = Record<string, unknown>
 
@@ -6,7 +7,7 @@ export async function postJson<T = unknown>(path: string, body: Json, init?: Req
   const url = `${API_BASE}${path}`
   const res = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...(init?.headers || {}) },
+    headers: { 'Content-Type': 'application/json', ...(API_KEY ? { 'X-API-Key': API_KEY } : {}), ...(init?.headers || {}) },
     credentials: 'include',
     body: JSON.stringify(body),
     ...init,
@@ -24,6 +25,7 @@ export async function getJson<T = unknown>(path: string, init?: RequestInit): Pr
   const res = await fetch(url, {
     method: 'GET',
     credentials: 'include',
+    headers: { ...(API_KEY ? { 'X-API-Key': API_KEY } : {}), ...(init?.headers || {}) },
     ...init,
   })
   if (!res.ok) {

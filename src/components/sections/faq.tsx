@@ -50,7 +50,7 @@ export default function Faq() {
           <p className="mb-6 max-w-3xl text-black/75 dark:text-white/75 lg:text-lg font-light leading-relaxed tracking-tight">
             Our dedicated support team is here to help you with integration questions and technical concerns.
           </p>
-          <a className="rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm hover:bg-primary/90" href="#contact">Contact Support</a>
+          <a className="rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm hover:bg-primary/90" href="http://localhost:3001/contact">Contact Support</a>
         </div>
       </div>
     </section>

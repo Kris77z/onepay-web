@@ -2,8 +2,7 @@
 
 import { SectionCards } from "@/components/section-cards";
 import { ChartAreaInteractive } from "@/components/chart-area-interactive";
-import { DataTable } from "@/components/data-table";
-import data from "../data.json";
+import PaymentsTable from "./payments-table";
 
 export function OverviewPage() {
   return (
@@ -15,7 +14,7 @@ export function OverviewPage() {
       <ChartAreaInteractive />
       
       {/* 交易历史表格 */}
-      <DataTable data={data} />
+      <PaymentsTable />
     </div>
   );
 }

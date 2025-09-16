@@ -1,10 +1,20 @@
 "use client";
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, CheckCircle } from "lucide-react";
+import ComingSoonToast from "@/components/ui/coming-soon-toast";
 
 export default function PaymentHero() {
+  const [showComingSoon, setShowComingSoon] = useState(false);
+
+  const handleComingSoon = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setShowComingSoon(true);
+  };
+
   return (
+    <>
     <section className="relative min-h-[80vh] flex items-center justify-center bg-gradient-to-br from-background via-background to-background/95 overflow-hidden">
       {/* Background Pattern */}
       <div className="absolute inset-0 opacity-5">
@@ -28,12 +38,12 @@ export default function PaymentHero() {
           
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
-            <Button size="lg" className="text-base px-8 py-3 h-auto">
+            <Button size="lg" className="text-base px-8 py-3 h-auto" onClick={handleComingSoon}>
               GET STARTED
               <ArrowRight className="ml-2 w-4 h-4" />
             </Button>
-            <Button variant="outline" size="lg" className="text-base px-8 py-3 h-auto">
-              Contact us
+            <Button variant="outline" size="lg" className="text-base px-8 py-3 h-auto" asChild>
+              <a href="http://localhost:3001/contact">Contact us</a>
             </Button>
           </div>
           
@@ -56,5 +66,11 @@ export default function PaymentHero() {
       </div>
       
     </section>
+    
+    <ComingSoonToast 
+      isOpen={showComingSoon} 
+      onClose={() => setShowComingSoon(false)} 
+    />
+    </>
   );
 }

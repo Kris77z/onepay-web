@@ -1,11 +1,24 @@
+"use client";
+
+import { useState } from "react";
+import Image from "next/image";
+import ComingSoonToast from "@/components/ui/coming-soon-toast";
+
 export default function Footer() {
+  const [showComingSoon, setShowComingSoon] = useState(false);
+
+  const handleComingSoon = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setShowComingSoon(true);
+  };
+
   const sections = [
     {
       title: "Services",
       links: [
-        { name: "Buy Crypto", href: "#buy-crypto" },
-        { name: "Trade", href: "#trade" },
-        { name: "Payments", href: "#payments" },
+        { name: "Buy Crypto", href: "#buy-crypto", comingSoon: true },
+        { name: "Trade", href: "#trade", comingSoon: true },
+        { name: "Payments", href: "/payments", comingSoon: false },
       ],
     },
   ];
@@ -22,7 +35,15 @@ export default function Footer() {
           <div className="flex w-full flex-col justify-between gap-6 lg:items-start">
             <div className="flex items-center lg:justify-start">
               <a href="#">
-                <img src="/images/onepay-light.png" alt="logo" title="OnePay" className="h-12" />
+                <Image 
+                  src="/images/onepay-logo-light.png" 
+                  alt="logo" 
+                  title="OnePay" 
+                  width={150} 
+                  height={50} 
+                  className="h-12 w-auto object-contain" 
+                  quality={90}
+                />
               </a>
             </div>
             <p className="max-w-[70%] text-muted-foreground text-sm">
@@ -39,7 +60,13 @@ export default function Footer() {
                 <ul className="space-y-3 text-muted-foreground text-sm">
                   {section.links.map((link) => (
                     <li key={link.name} className="font-medium hover:text-primary">
-                      <a href={link.href}>{link.name}</a>
+                      {link.comingSoon ? (
+                        <button onClick={handleComingSoon} className="cursor-pointer">
+                          {link.name}
+                        </button>
+                      ) : (
+                        <a href={link.href}>{link.name}</a>
+                      )}
                     </li>
                   ))}
                 </ul>
@@ -58,6 +85,11 @@ export default function Footer() {
           </ul>
         </div>
       </div>
+      
+      <ComingSoonToast 
+        isOpen={showComingSoon} 
+        onClose={() => setShowComingSoon(false)} 
+      />
     </section>
   );
 }
