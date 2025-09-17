@@ -3,6 +3,8 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { CONTACT_URL } from "@/lib/links";
+import Link from "next/link";
 
 export default function PaymentHero() {
   const { toast } = useToast();
@@ -42,7 +44,7 @@ export default function PaymentHero() {
               <ArrowRight className="ml-2 w-4 h-4" />
             </Button>
             <Button variant="outline" size="lg" className="text-base px-8 py-3 h-auto" asChild>
-              <a href="http://localhost:3001/contact">Contact us</a>
+              <Link href={CONTACT_URL}>Contact us</Link>
             </Button>
           </div>
           

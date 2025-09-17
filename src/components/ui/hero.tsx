@@ -4,6 +4,8 @@ import { useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { MoveRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { CONTACT_URL } from "@/lib/links";
+import Link from "next/link";
 
 interface Beam {
   x: number;
@@ -169,9 +171,9 @@ export const PremiumHero = () => {
                 Start Integration <MoveRight className="w-4 h-4" />
               </Button>
             <Button size="sm" className="gap-4" variant="outline" asChild>
-              <a href="http://localhost:3001/contact">
+              <Link href={CONTACT_URL}>
                 Contact Us <MoveRight className="w-4 h-4" />
-              </a>
+              </Link>
             </Button>
             </div>
           </div>
