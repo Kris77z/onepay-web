@@ -1,9 +1,21 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { UserPlus, Store, Key, ArrowRight } from "lucide-react";
+
+const emitComingSoon = () => {
+  if (typeof window !== 'undefined') {
+    const event = new CustomEvent('show-toast', {
+      detail: {
+        title: 'Coming Soon!',
+        message: "The product is about to be launched, please look forward to it！",
+        variant: 'default'
+      }
+    });
+    window.dispatchEvent(event);
+  }
+};
 
 const steps = [
   {
@@ -33,9 +45,7 @@ const steps = [
           <Store className="w-4 h-4 text-primary" />
           <span className="text-sm font-medium">Create merchant</span>
         </div>
-        <Link href="/auth">
-          <Button size="sm" className="w-full text-xs">Create</Button>
-        </Link>
+        <Button size="sm" className="w-full text-xs" onClick={emitComingSoon}>Create</Button>
       </div>
     )
   },
@@ -54,11 +64,9 @@ const steps = [
         <div className="text-xs font-mono bg-muted/20 p-2 rounded mb-2">
           kTaz9Eh*******OBh9aG5
         </div>
-        <Link href="/auth">
-          <Button variant="outline" size="sm" className="w-full text-xs">
-            Regenerate the Payment API key
-          </Button>
-        </Link>
+        <Button variant="outline" size="sm" className="w-full text-xs" onClick={emitComingSoon}>
+          Regenerate the Payment API key
+        </Button>
       </div>
     )
   }
@@ -127,12 +135,10 @@ export default function HowToAccept() {
           
           {/* CTA */}
           <div className="text-center mt-12">
-            <Link href="/auth">
-              <Button size="lg" className="text-base px-8 py-3 h-auto">
-                GET STARTED
-                <ArrowRight className="ml-2 w-4 h-4" />
-              </Button>
-            </Link>
+            <Button size="lg" className="text-base px-8 py-3 h-auto" onClick={emitComingSoon}>
+              GET STARTED
+              <ArrowRight className="ml-2 w-4 h-4" />
+            </Button>
           </div>
         </div>
       </div>
