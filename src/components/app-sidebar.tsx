@@ -9,6 +9,7 @@ import {
 } from "@tabler/icons-react"
 import Image from "next/image"
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 
 import { NavMain } from "@/components/nav-main"
 import { NavUser } from "@/components/nav-user"
@@ -30,6 +31,7 @@ interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
 }
 
 export function AppSidebar({ onPageChange, currentPage, ...props }: AppSidebarProps) {
+  const pathname = usePathname()
   const user = {
     name: "OnePay User",
     email: "user@onepay.com",
@@ -39,47 +41,43 @@ export function AppSidebar({ onPageChange, currentPage, ...props }: AppSidebarPr
   const navMain = [
     {
       title: "Overview",
-      url: "#",
+      url: "/dashboard/overview",
       icon: IconChartPie,
       key: "overview" as PageType,
-      isActive: currentPage === "overview",
+      isActive: pathname?.startsWith("/dashboard/overview"),
     },
     {
       title: "Trade",
-      url: "#",
+      url: "/dashboard/trade",
       icon: IconExchange,
       key: "trade" as PageType,
-      isActive: currentPage === "trade",
+      isActive: pathname?.startsWith("/dashboard/trade"),
     },
     {
       title: "History",
-      url: "#",
+      url: "/dashboard/history",
       icon: IconHistory,
       key: "history" as PageType,
-      isActive: currentPage === "history",
+      isActive: pathname?.startsWith("/dashboard/history"),
     },
     {
       title: "Settings",
-      url: "#",
+      url: "/dashboard/settings",
       icon: IconSettings,
       key: "settings" as PageType,
-      isActive: currentPage === "settings",
+      isActive: pathname?.startsWith("/dashboard/settings"),
     },
     {
       title: "Test",
-      url: "#",
+      url: "/dashboard/test",
       icon: IconExchange,
       key: "test" as PageType,
-      isActive: currentPage === "test",
+      isActive: pathname?.startsWith("/dashboard/test"),
     },
   ];
 
 
-  const handleNavClick = (key?: PageType) => {
-    if (key && onPageChange) {
-      onPageChange(key);
-    }
-  };
+  const handleNavClick = (key?: PageType) => {};
 
   return (
     <Sidebar collapsible="offcanvas" {...props}>
