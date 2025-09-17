@@ -20,7 +20,7 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const toasterRef = useRef<ToasterRef>(null);
+  const toasterRef = useRef<ToasterRef | null>(null);
 
   useEffect(() => {
     const handleShowToast = (event: CustomEvent) => {

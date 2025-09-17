@@ -134,10 +134,11 @@ export function SettingsPage() {
         decimals: genDecimals,
         expected_amount: genAmount,
       }
-      const resp = await postJson<any>(`/api/orders`, body)
+      const resp = await postJson<{pay_url?: string; deep_link?: string; qrcode_text?: string}>(`/api/orders`, body)
       setGenResult({ pay_url: resp?.pay_url, deep_link: resp?.deep_link, qrcode_text: resp?.qrcode_text })
-    }catch(e:any){
-      setGenResult({ error: e?.data?.error || e?.message || 'Generate failed' })
+    }catch(e: unknown){
+      const errorMessage = (e as Error)?.message || 'Generate failed'
+      setGenResult({ error: errorMessage })
     }finally{
       setGenLoading(false)
     }

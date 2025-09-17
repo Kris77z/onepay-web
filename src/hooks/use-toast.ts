@@ -3,10 +3,10 @@
 import { useRef } from "react";
 import { ToasterRef } from "@/components/ui/toast";
 
-let toasterRef: React.RefObject<ToasterRef> | null = null;
+let toasterRef: React.RefObject<ToasterRef | null> | null = null;
 
 export function useToast() {
-  const ref = useRef<ToasterRef>(null);
+  const ref = useRef<ToasterRef | null>(null);
   
   if (!toasterRef) {
     toasterRef = ref;

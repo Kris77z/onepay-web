@@ -498,7 +498,7 @@ export default function TestPage() {
             const parsed = await conn.getParsedTokenAccountsByOwner(owner, { mint })
             const first = parsed.value?.[0]
             if(first){
-              const info: any = first.account.data.parsed.info
+              const info = first.account.data.parsed.info as {tokenAmount: {amount: string; decimals: number}}
               const amountStr: string = info.tokenAmount.amount
               const decimals: number = info.tokenAmount.decimals
               const bal = Number(amountStr) / Math.pow(10, decimals)
@@ -779,7 +779,7 @@ export default function TestPage() {
         try {
           const accounts = await injected.request<string[]>({ method: 'eth_requestAccounts' })
           const evmAddr = accounts?.[0]
-          if(evmAddr){ setAccount(evmAddr); await checkTokenBalance(evmAddr, chainKey as any) }
+          if(evmAddr){ setAccount(evmAddr); await checkTokenBalance(evmAddr, chainKey as 'ethereum'|'bsc'|'arbitrum'|'bsc-testnet') }
         } catch {}
       } else {
         addLog(`切换后校验失败: 当前 chainId=${currentChainId}, 期望=${chainConfig.chainId}`, 'error')
@@ -921,8 +921,8 @@ export default function TestPage() {
           const txt = await res.text()
           addLog(`📥 status 原始响应: ${txt || '<empty>'}`)
           if(!res.ok) continue
-          let data: any
-          try { data = txt ? JSON.parse(txt) : {} } catch {}
+          let data: {status?: string; failed_reason?: string}
+          try { data = txt ? JSON.parse(txt) : {} } catch { data = {} }
           if(data?.status === 'success'){
             addLog('后端确认支付成功！', 'success')
             updateMetrics({ statusPolled: true, currentStep: 6 })
@@ -1763,11 +1763,11 @@ function DevMetrics(){
         <div className="flex gap-6">
           <div>
             <div className="text-muted-foreground">Total Fees</div>
-            <div className="font-semibold">${'{'}data ? data.total_fees.toFixed(2) : '0.00'{'}'}</div>
+            <div className="font-semibold">${data ? data.total_fees.toFixed(2) : '0.00'}</div>
           </div>
           <div>
             <div className="text-muted-foreground">Payers</div>
-            <div className="font-semibold">${'{'}data ? data.payers_count : 0{'}'}</div>
+            <div className="font-semibold">{data ? data.payers_count : 0}</div>
           </div>
         </div>
       )}
